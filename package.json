@@ -1,6 +1,6 @@
 {
   "name": "@nvt1904/prisma-valibot-generator",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "description": "A Prisma generator that creates Valibot validation schemas from your Prisma models with full operation support and intelligent conditional generation.",
   "main": "dist/generator.cjs",

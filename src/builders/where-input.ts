@@ -18,9 +18,18 @@ export function generateWhereInputSchema(model: DMMF.Model): string {
 
   for (const field of model.fields) {
     if (field.kind === 'scalar' || field.kind === 'enum') {
-      // Scalar field filters
       const filterSchemaName = getFilterSchemaName(field);
-      schemaFields.push(`  ${field.name}: v.optional(${filterSchemaName}),`);
+
+      if (field.isList) {
+        // List fields (arrays) only accept filter schemas, not direct values
+        schemaFields.push(`  ${field.name}: v.optional(v.lazy(() => ${filterSchemaName})),`);
+      } else {
+        // Scalar/enum fields accept filter schema OR direct value
+        const directValue = getDirectValueSchema(field);
+        schemaFields.push(
+          `  ${field.name}: v.optional(v.lazy(() => v.union([${filterSchemaName}, ${directValue}]))),`
+        );
+      }
     } else if (field.kind === 'object') {
       // Relation filters
       if (field.isList) {
@@ -54,9 +63,9 @@ function getFilterSchemaName(field: DMMF.Field): string {
   if (field.kind === 'enum') {
     // Check if enum field is nullable
     if (!field.isRequired) {
-      return `v.lazy(() => ${field.type}NullableFilterSchema)`;
+      return `${field.type}NullableFilterSchema`;
     }
-    return `v.lazy(() => ${field.type}FilterSchema)`;
+    return `${field.type}FilterSchema`;
   }
 
   const typeFilterMap: Record<string, string> = {
@@ -75,15 +84,45 @@ function getFilterSchemaName(field: DMMF.Field): string {
 
   if (field.isList) {
     const listFilterName = normalizeSchemaName(filterName.replace('Filter', 'ListFilter'));
-    return `v.lazy(() => ${listFilterName})`;
+    return listFilterName;
   }
 
   if (!field.isRequired) {
     const nullableFilterName = normalizeSchemaName(filterName.replace('Filter', 'NullableFilter'));
-    return `v.lazy(() => ${nullableFilterName})`;
+    return nullableFilterName;
   }
 
-  return `v.lazy(() => ${normalizeSchemaName(filterName)})`;
+  return normalizeSchemaName(filterName);
+}
+
+/**
+ * Gets the direct value schema for a field (used in WhereInput unions)
+ * E.g., for `name?: StringFilter | string`, this returns the `string` part
+ */
+function getDirectValueSchema(field: DMMF.Field): string {
+  if (field.kind === 'enum') {
+    // Enum: v.picklist(...) or v.nullable(v.picklist(...))
+    const enumSchema = `v.picklist(${field.type}Enum)`;
+    return field.isRequired ? enumSchema : `v.nullable(${enumSchema})`;
+  }
+
+  // Scalar types
+  const typeMap: Record<string, string> = {
+    String: 'v.string()',
+    Int: 'v.number()',
+    BigInt: 'v.bigint()',
+    Float: 'v.number()',
+    Decimal: 'v.number()',
+    Boolean: 'v.boolean()',
+    DateTime: 'v.pipe(v.string(), v.isoDateTime())',
+    Json: 'v.any()',
+    Bytes: 'v.instance(Buffer)',
+  };
+
+  const baseSchema = typeMap[field.type] || 'v.any()';
+
+  // Handle nullable fields
+  return field.isRequired ? baseSchema : `v.nullable(${baseSchema})`;
 }
 
 /**
