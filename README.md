@@ -5,7 +5,9 @@ A Prisma generator that creates Valibot validation schemas for all your Prisma m
 ## Installation
 
 ```bash
-npm install prisma-valibot-generator valibot
+npm install @nvt1904/prisma-valibot-generator valibot
+
+yarn add @nvt1904/prisma-valibot-generator valibot
 ```
 
 ## Usage
