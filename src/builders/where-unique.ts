@@ -5,15 +5,16 @@ import { DMMF } from '@prisma/generator-helper';
  */
 export function generateWhereUniqueInputSchema(model: DMMF.Model): string {
   const schemaName = `${model.name}WhereUniqueInputSchema`;
-  const uniqueFields: string[] = [];
+  const uniqueConstraints: string[] = [];
 
-  // Find all unique fields
+  // Find all unique fields and create separate object schemas for each
   for (const field of model.fields) {
     if (field.isId || field.isUnique) {
       if (field.kind === 'scalar' || field.kind === 'enum') {
         const fieldType =
           field.kind === 'enum' ? `v.picklist(${field.type}Enum)` : getScalarType(field.type);
-        uniqueFields.push(`  ${field.name}: v.optional(${fieldType}),`);
+        // Each unique field is its own constraint option
+        uniqueConstraints.push(`v.object({ ${field.name}: ${fieldType} })`);
       }
     }
   }
@@ -22,6 +23,7 @@ export function generateWhereUniqueInputSchema(model: DMMF.Model): string {
   if (model.uniqueIndexes) {
     for (const index of model.uniqueIndexes) {
       if (index.fields && index.fields.length > 1) {
+        // Prisma generates a compound name like "field1_field2"
         const compoundName = index.fields.join('_');
         const compoundFields = index.fields
           .map((fieldName) => {
@@ -29,21 +31,28 @@ export function generateWhereUniqueInputSchema(model: DMMF.Model): string {
             if (!field) return '';
             const fieldType =
               field.kind === 'enum' ? `v.picklist(${field.type}Enum)` : getScalarType(field.type);
-            return `    ${fieldName}: ${fieldType},`;
+            return `${fieldName}: ${fieldType}`;
           })
           .filter(Boolean);
 
-        uniqueFields.push(`  ${compoundName}: v.optional(v.object({
-${compoundFields.join('\n')}
-  })),`);
+        // Wrap in nested object structure that Prisma expects
+        uniqueConstraints.push(
+          `v.object({ ${compoundName}: v.object({ ${compoundFields.join(', ')} }) })`
+        );
       }
     }
   }
 
-  return `export const ${schemaName} = v.object({
-${uniqueFields.join('\n')}
-});
+  // If only one constraint, use it directly; otherwise use union
+  if (uniqueConstraints.length === 1) {
+    return `export const ${schemaName}: v.GenericSchema<Prisma.${model.name}WhereUniqueInput> = ${uniqueConstraints[0]};
 `;
+  } else {
+    return `export const ${schemaName}: v.GenericSchema<Prisma.${model.name}WhereUniqueInput> = v.union([
+  ${uniqueConstraints.join(',\n  ')}
+]);
+`;
+  }
 }
 
 function getScalarType(type: string): string {

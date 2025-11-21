@@ -5,7 +5,7 @@ import { generateModelSchema, generateScalarFieldEnum } from '../builders/model-
 import {
   generateWhereInputSchema,
   generateScalarFilterSchemas,
-  generateRelationFilterSchema,
+  generateListRelationFilterSchema,
 } from '../builders/where-input';
 import { generateWhereUniqueInputSchema } from '../builders/where-unique';
 import {
@@ -22,7 +22,9 @@ import {
 import {
   generateCreateArgsSchema,
   generateCreateInputSchema,
+  generateUncheckedCreateInputSchema,
   generateCreateNestedManyInputSchema,
+  generateUncheckedCreateNestedManyInputSchema,
   generateCreateNestedOneInputSchema,
   generateCreateOrConnectInputSchema,
   generateCreateManyArgsSchema,
@@ -31,6 +33,7 @@ import {
 import {
   generateUpdateArgsSchema,
   generateUpdateInputSchema,
+  generateUncheckedUpdateInputSchema,
   generateUpdateManyNestedInputSchema,
   generateUpdateOneNestedInputSchema,
   generateUpsertWithWhereUniqueInputSchema,
@@ -121,7 +124,10 @@ import type { Prisma } from '@prisma/client';
     indexContent += `\n// ${model.name} Where & OrderBy\n`;
     indexContent += generateWhereUniqueInputSchema(model);
     indexContent += generateWhereInputSchema(model);
-    indexContent += generateRelationFilterSchema(model);
+    // Only generate ListRelationFilter for models used as list relations
+    if (modelsUsedAsListRelations.has(model.name)) {
+      indexContent += generateListRelationFilterSchema(model);
+    }
     indexContent += generateOrderBySchema(model);
     // Only generate OrderByRelationAggregate for models used as list relations
     if (modelsUsedAsListRelations.has(model.name)) {
@@ -135,11 +141,14 @@ import type { Prisma } from '@prisma/client';
   for (const model of models) {
     indexContent += `\n// ${model.name} Create/Update Inputs\n`;
     indexContent += generateCreateInputSchema(model);
+    indexContent += generateUncheckedCreateInputSchema(model);
     indexContent += generateCreateNestedManyInputSchema(model);
+    indexContent += generateUncheckedCreateNestedManyInputSchema(model);
     indexContent += generateCreateNestedOneInputSchema(model);
     indexContent += generateCreateOrConnectInputSchema(model);
     indexContent += generateCreateManyInputSchema(model);
     indexContent += generateUpdateInputSchema(model);
+    indexContent += generateUncheckedUpdateInputSchema(model);
     indexContent += generateUpdateManyNestedInputSchema(model);
     indexContent += generateUpdateOneNestedInputSchema(model);
     indexContent += generateUpsertWithWhereUniqueInputSchema(model);

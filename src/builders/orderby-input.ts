@@ -9,10 +9,15 @@ export function generateOrderBySchema(model: DMMF.Model): string {
 
   for (const field of model.fields) {
     if (field.kind === 'scalar' || field.kind === 'enum') {
-      // Allow either simple sort order or sort order with nulls
-      schemaFields.push(
-        `  ${field.name}: v.optional(v.union([SortOrderSchema, SortOrderInputSchema])),`
-      );
+      // For nullable fields, allow SortOrderInput (with nulls option)
+      // For required fields, only allow SortOrderSchema
+      if (field.isRequired) {
+        schemaFields.push(`  ${field.name}: v.optional(SortOrderSchema),`);
+      } else {
+        schemaFields.push(
+          `  ${field.name}: v.optional(v.union([SortOrderSchema, SortOrderInputSchema])),`
+        );
+      }
     } else if (field.kind === 'object') {
       if (field.isList) {
         schemaFields.push(

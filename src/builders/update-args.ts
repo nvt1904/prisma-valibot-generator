@@ -10,14 +10,14 @@ export function generateUpdateArgsSchema(model: DMMF.Model): string {
   return `export const ${schemaName}: v.GenericSchema<Prisma.${model.name}UpdateArgs> = v.lazy(() => v.object({
   select: v.optional(${model.name}SelectSchema),
   include: v.optional(${model.name}IncludeSchema),
-  data: ${model.name}UpdateInputSchema,
+  data: v.union([${model.name}UpdateInputSchema, ${model.name}UncheckedUpdateInputSchema]),
   where: ${model.name}WhereUniqueInputSchema,
 }));
 `;
 }
 
 /**
- * Generates UpdateInput schema
+ * Generates UpdateInput schema (with nested relations)
  */
 export function generateUpdateInputSchema(model: DMMF.Model): string {
   const schemaName = `${model.name}UpdateInputSchema`;
@@ -25,7 +25,7 @@ export function generateUpdateInputSchema(model: DMMF.Model): string {
 
   for (const field of model.fields) {
     if (field.kind === 'object') {
-      // Relation fields
+      // Relation fields - only include relation, not foreign keys
       if (field.isList) {
         fields.push(
           `  ${field.name}: v.optional(v.lazy(() => ${field.type}UpdateManyNestedInputSchema)),`
@@ -36,6 +36,12 @@ export function generateUpdateInputSchema(model: DMMF.Model): string {
         );
       }
     } else {
+      // Skip foreign key fields if there's a corresponding relation
+      const isRelationForeignKey = model.fields.some(
+        (f) => f.kind === 'object' && f.relationFromFields?.includes(field.name)
+      );
+      if (isRelationForeignKey) continue;
+
       // Scalar/enum fields - all optional in update
       const valibotType =
         field.kind === 'enum'
@@ -46,7 +52,35 @@ export function generateUpdateInputSchema(model: DMMF.Model): string {
     }
   }
 
-  return `export const ${schemaName}: v.GenericSchema = v.lazy(() => v.object({
+  return `export const ${schemaName}: v.GenericSchema<Prisma.${model.name}UpdateInput> = v.lazy(() => v.object({
+${fields.join('\n')}
+}));
+`;
+}
+
+/**
+ * Generates UncheckedUpdateInput schema (with foreign key IDs instead of relations)
+ */
+export function generateUncheckedUpdateInputSchema(model: DMMF.Model): string {
+  const schemaName = `${model.name}UncheckedUpdateInputSchema`;
+  const fields: string[] = [];
+
+  for (const field of model.fields) {
+    if (field.kind === 'object') {
+      // For UncheckedUpdateInput, exclude all relations (use foreign keys instead)
+      continue;
+    }
+
+    // Include all scalar/enum fields (including foreign keys)
+    const valibotType =
+      field.kind === 'enum'
+        ? `v.picklist(${field.type}Enum)`
+        : getValibotType(field.type, field.isList);
+
+    fields.push(`  ${field.name}: v.optional(${valibotType}),`);
+  }
+
+  return `export const ${schemaName}: v.GenericSchema<Prisma.${model.name}UncheckedUpdateInput> = v.lazy(() => v.object({
 ${fields.join('\n')}
 }));
 `;
@@ -56,7 +90,7 @@ ${fields.join('\n')}
  * Generates UpdateManyNested input schema for list relations
  */
 export function generateUpdateManyNestedInputSchema(model: DMMF.Model): string {
-  return `export const ${model.name}UpdateManyNestedInputSchema: v.GenericSchema = v.lazy(() => v.object({
+  return `export const ${model.name}UpdateManyNestedInputSchema = v.lazy(() => v.object({
   create: v.optional(v.union([v.lazy(() => ${model.name}CreateInputSchema), v.array(v.lazy(() => ${model.name}CreateInputSchema))])),
   connectOrCreate: v.optional(v.union([v.lazy(() => ${model.name}CreateOrConnectInputSchema), v.array(v.lazy(() => ${model.name}CreateOrConnectInputSchema))])),
   upsert: v.optional(v.union([v.lazy(() => ${model.name}UpsertWithWhereUniqueInputSchema), v.array(v.lazy(() => ${model.name}UpsertWithWhereUniqueInputSchema))])),
@@ -75,7 +109,7 @@ export function generateUpdateManyNestedInputSchema(model: DMMF.Model): string {
  * Generates UpdateOneNested input schema for single relations
  */
 export function generateUpdateOneNestedInputSchema(model: DMMF.Model): string {
-  return `export const ${model.name}UpdateOneNestedInputSchema: v.GenericSchema = v.lazy(() => v.object({
+  return `export const ${model.name}UpdateOneNestedInputSchema = v.lazy(() => v.object({
   create: v.optional(v.lazy(() => ${model.name}CreateInputSchema)),
   connectOrCreate: v.optional(v.lazy(() => ${model.name}CreateOrConnectInputSchema)),
   upsert: v.optional(v.lazy(() => ${model.name}UpsertInputSchema)),
@@ -91,7 +125,7 @@ export function generateUpdateOneNestedInputSchema(model: DMMF.Model): string {
  * Generates UpsertWithWhereUnique input schema
  */
 export function generateUpsertWithWhereUniqueInputSchema(model: DMMF.Model): string {
-  return `export const ${model.name}UpsertWithWhereUniqueInputSchema: v.GenericSchema = v.lazy(() => v.object({
+  return `export const ${model.name}UpsertWithWhereUniqueInputSchema = v.lazy(() => v.object({
   where: ${model.name}WhereUniqueInputSchema,
   update: v.lazy(() => ${model.name}UpdateInputSchema),
   create: v.lazy(() => ${model.name}CreateInputSchema),
@@ -103,7 +137,7 @@ export function generateUpsertWithWhereUniqueInputSchema(model: DMMF.Model): str
  * Generates Upsert input schema for single relations
  */
 export function generateUpsertInputSchema(model: DMMF.Model): string {
-  return `export const ${model.name}UpsertInputSchema: v.GenericSchema = v.lazy(() => v.object({
+  return `export const ${model.name}UpsertInputSchema = v.lazy(() => v.object({
   update: v.lazy(() => ${model.name}UpdateInputSchema),
   create: v.lazy(() => ${model.name}CreateInputSchema),
 }));
@@ -114,7 +148,7 @@ export function generateUpsertInputSchema(model: DMMF.Model): string {
  * Generates UpdateWithWhereUnique input schema
  */
 export function generateUpdateWithWhereUniqueInputSchema(model: DMMF.Model): string {
-  return `export const ${model.name}UpdateWithWhereUniqueInputSchema: v.GenericSchema = v.lazy(() => v.object({
+  return `export const ${model.name}UpdateWithWhereUniqueInputSchema = v.lazy(() => v.object({
   where: ${model.name}WhereUniqueInputSchema,
   data: v.lazy(() => ${model.name}UpdateInputSchema),
 }));
@@ -125,7 +159,7 @@ export function generateUpdateWithWhereUniqueInputSchema(model: DMMF.Model): str
  * Generates UpdateManyWithWhere input schema
  */
 export function generateUpdateManyWithWhereInputSchema(model: DMMF.Model): string {
-  return `export const ${model.name}UpdateManyWithWhereInputSchema: v.GenericSchema = v.lazy(() => v.object({
+  return `export const ${model.name}UpdateManyWithWhereInputSchema = v.lazy(() => v.object({
   where: v.lazy(() => ${model.name}WhereInputSchema),
   data: v.lazy(() => ${model.name}UpdateManyMutationInputSchema),
 }));
@@ -164,7 +198,7 @@ export function generateUpdateManyMutationInputSchema(model: DMMF.Model): string
     fields.push(`  ${field.name}: v.optional(${valibotType}),`);
   }
 
-  return `export const ${schemaName}: v.GenericSchema = v.lazy(() => v.object({
+  return `export const ${schemaName}: v.GenericSchema<Prisma.${model.name}UpdateManyMutationInput> = v.lazy(() => v.object({
 ${fields.join('\n')}
 }));
 `;

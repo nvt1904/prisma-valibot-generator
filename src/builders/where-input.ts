@@ -23,10 +23,20 @@ export function generateWhereInputSchema(model: DMMF.Model): string {
       schemaFields.push(`  ${field.name}: v.optional(${filterSchemaName}),`);
     } else if (field.kind === 'object') {
       // Relation filters
-      const relationType = field.isList ? 'ListRelationFilter' : 'RelationFilter';
-      schemaFields.push(
-        `  ${field.name}: v.optional(v.lazy(() => ${field.type}${relationType}Schema)),`
-      );
+      if (field.isList) {
+        // List relation - use separate schema
+        schemaFields.push(
+          `  ${field.name}: v.optional(v.lazy(() => ${field.type}ListRelationFilterSchema)),`
+        );
+      } else {
+        // Single relation - inline the filter (Prisma doesn't export separate type)
+        schemaFields.push(
+          `  ${field.name}: v.optional(v.lazy(() => v.object({`,
+          `    is: v.optional(v.lazy(() => ${field.type}WhereInputSchema)),`,
+          `    isNot: v.optional(v.lazy(() => ${field.type}WhereInputSchema)),`,
+          `  }))),`
+        );
+      }
     }
   }
 
@@ -42,6 +52,10 @@ function normalizeSchemaName(name: string): string {
 
 function getFilterSchemaName(field: DMMF.Field): string {
   if (field.kind === 'enum') {
+    // Check if enum field is nullable
+    if (!field.isRequired) {
+      return `v.lazy(() => ${field.type}NullableFilterSchema)`;
+    }
     return `v.lazy(() => ${field.type}FilterSchema)`;
   }
 
@@ -602,27 +616,10 @@ export const BytesListFilterSchema: v.GenericSchema<BytesListFilter> = v.object(
 }
 
 /**
- * Generates relation filter schemas
+ * Generates list relation filter schema (only for models used as list relations)
  */
-export function generateRelationFilterSchema(model: DMMF.Model): string {
-  return `
-type ${model.name}RelationFilter = {
-  is?: ${model.name}WhereInput;
-  isNot?: ${model.name}WhereInput;
-};
-
-type ${model.name}ListRelationFilter = {
-  every?: ${model.name}WhereInput;
-  some?: ${model.name}WhereInput;
-  none?: ${model.name}WhereInput;
-};
-
-export const ${model.name}RelationFilterSchema: v.GenericSchema<${model.name}RelationFilter> = v.object({
-  is: v.optional(v.lazy(() => ${model.name}WhereInputSchema)),
-  isNot: v.optional(v.lazy(() => ${model.name}WhereInputSchema)),
-});
-
-export const ${model.name}ListRelationFilterSchema: v.GenericSchema<${model.name}ListRelationFilter> = v.object({
+export function generateListRelationFilterSchema(model: DMMF.Model): string {
+  return `export const ${model.name}ListRelationFilterSchema: v.GenericSchema<Prisma.${model.name}ListRelationFilter> = v.object({
   every: v.optional(v.lazy(() => ${model.name}WhereInputSchema)),
   some: v.optional(v.lazy(() => ${model.name}WhereInputSchema)),
   none: v.optional(v.lazy(() => ${model.name}WhereInputSchema)),

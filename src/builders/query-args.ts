@@ -5,6 +5,7 @@ import { DMMF } from '@prisma/generator-helper';
  */
 export function generateFindManyArgsSchema(model: DMMF.Model): string {
   const schemaName = `${model.name}FindManyArgsSchema`;
+  const scalarFields = model.fields.filter((f) => f.kind !== 'object').map((f) => `'${f.name}'`);
 
   return `export const ${schemaName}: v.GenericSchema<Prisma.${model.name}FindManyArgs> = v.lazy(() => v.object({
   select: v.optional(${model.name}SelectSchema),
@@ -14,7 +15,7 @@ export function generateFindManyArgsSchema(model: DMMF.Model): string {
   cursor: v.optional(${model.name}WhereUniqueInputSchema),
   take: v.optional(v.number()),
   skip: v.optional(v.number()),
-  distinct: v.optional(v.array(v.picklist(Object.keys(${model.name}ScalarFieldEnum) as [string, ...string[]]))),
+  distinct: v.optional(v.union([v.picklist([${scalarFields.join(', ')}]), v.array(v.picklist([${scalarFields.join(', ')}]))])),
 }));
 `;
 }
@@ -24,6 +25,7 @@ export function generateFindManyArgsSchema(model: DMMF.Model): string {
  */
 export function generateFindFirstArgsSchema(model: DMMF.Model): string {
   const schemaName = `${model.name}FindFirstArgsSchema`;
+  const scalarFields = model.fields.filter((f) => f.kind !== 'object').map((f) => `'${f.name}'`);
 
   return `export const ${schemaName}: v.GenericSchema<Prisma.${model.name}FindFirstArgs> = v.lazy(() => v.object({
   select: v.optional(${model.name}SelectSchema),
@@ -33,7 +35,7 @@ export function generateFindFirstArgsSchema(model: DMMF.Model): string {
   cursor: v.optional(${model.name}WhereUniqueInputSchema),
   take: v.optional(v.number()),
   skip: v.optional(v.number()),
-  distinct: v.optional(v.array(v.picklist(Object.keys(${model.name}ScalarFieldEnum) as [string, ...string[]]))),
+  distinct: v.optional(v.union([v.picklist([${scalarFields.join(', ')}]), v.array(v.picklist([${scalarFields.join(', ')}]))])),
 }));
 `;
 }
