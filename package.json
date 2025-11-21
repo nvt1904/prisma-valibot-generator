@@ -5,7 +5,9 @@
   "description": "A Prisma generator that creates Valibot validation schemas from your Prisma models with full operation support and intelligent conditional generation.",
   "main": "dist/generator.cjs",
   "types": "dist/generator.d.cts",
-  "bin": "dist/bin.cjs",
+  "bin": {
+    "prisma-valibot-generator": "dist/bin.cjs"
+  },
   "files": [
     "dist",
     "README.md",

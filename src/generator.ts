@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-
 import { generatorHandler, GeneratorOptions } from '@prisma/generator-helper';
 import { generateSchemas } from './lib/generate-schemas';
 import { writeFileSafely } from './utils/write-file';
