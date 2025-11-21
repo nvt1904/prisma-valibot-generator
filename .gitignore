@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+*.tsbuildinfo
+.yarn
+.github/copilot-instructions.md
+
+prisma/generated/

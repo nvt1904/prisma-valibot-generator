@@ -1,0 +1,73 @@
+{
+  "name": "@nvt1904/prisma-valibot-generator",
+  "version": "0.0.1",
+  "type": "module",
+  "description": "A Prisma generator that creates Valibot validation schemas from your Prisma models with full operation support and intelligent conditional generation.",
+  "main": "dist/generator.cjs",
+  "types": "dist/generator.d.cts",
+  "bin": "dist/bin.cjs",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm run lint && npm run type-check"
+  },
+  "keywords": [
+    "prisma",
+    "valibot",
+    "generator",
+    "schema",
+    "validation",
+    "typescript",
+    "prisma-generator",
+    "prisma7",
+    "type-safe",
+    "conditional-generation"
+  ],
+  "author": "nvt1904",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nvt1904/prisma-valibot-generator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nvt1904/prisma-valibot-generator/issues"
+  },
+  "homepage": "https://github.com/nvt1904/prisma-valibot-generator#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@prisma/generator-helper": "^7.0.0",
+    "valibot": "^0.42.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@prisma/client": "^7.0.0",
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.47.0",
+    "@typescript-eslint/parser": "^8.47.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
+    "prisma": "^7.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.3.0",
+    "typescript-eslint": "^8.47.0"
+  },
+  "peerDependencies": {
+    "prisma": ">=5.0.0",
+    "valibot": ">=0.42.0"
+  },
+  "packageManager": "yarn@4.10.2"
+}
