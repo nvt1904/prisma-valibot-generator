@@ -259,6 +259,55 @@ npx prisma generate
 - `src/lib/` - Core generation logic
 - `src/utils/` - Helper utilities
 
+## Releasing New Versions
+
+This package uses automated CI/CD with GitHub Actions to publish to npm.
+
+### Prerequisites
+
+1. **Set up NPM_TOKEN secret** in your GitHub repository:
+   - Go to [npmjs.com](https://www.npmjs.com/) and generate an automation token
+   - In your GitHub repo, go to Settings → Secrets and variables → Actions
+   - Add a new repository secret named `NPM_TOKEN` with your npm token
+
+### Release Process
+
+1. **Update version** in `package.json`:
+
+   ```bash
+   # For patch releases (bug fixes)
+   npm version patch
+
+   # For minor releases (new features)
+   npm version minor
+
+   # For major releases (breaking changes)
+   npm version major
+   ```
+
+2. **Push the version tag**:
+
+   ```bash
+   git push origin main --follow-tags
+   ```
+
+3. **Automatic publishing**: GitHub Actions will automatically:
+   - Run tests (type-check, lint, build)
+   - Publish to npm with provenance
+   - Create a GitHub release
+
+### CI/CD Workflows
+
+- **CI** (`.github/workflows/ci.yml`): Runs on every push and PR
+  - Tests on Node.js 18 and 20
+  - Type checking, linting, building
+  - Prisma schema generation test
+
+- **Publish** (`.github/workflows/publish.yml`): Runs on version tags (`v*`)
+  - Builds the package
+  - Publishes to npm with provenance attestation
+  - Requires `NPM_TOKEN` secret
+
 ## License
 
 MIT
