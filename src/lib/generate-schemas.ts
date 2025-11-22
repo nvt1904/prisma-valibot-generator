@@ -29,6 +29,14 @@ import {
   generateCreateOrConnectInputSchema,
   generateCreateManyArgsSchema,
   generateCreateManyInputSchema,
+  generateCreateNestedOneWithoutInputSchemas,
+  generateCreateNestedManyWithoutInputSchemas,
+  generateCreateWithoutInputSchemas,
+  generateUncheckedCreateWithoutInputSchemas,
+  generateCreateOrConnectWithoutInputSchemas,
+  generateCreateManyInputEnvelopeSchemas,
+  generateCreateManyWithoutInputSchemas,
+  generateUncheckedCreateNestedManyWithoutInputSchemas,
 } from '../builders/create-args';
 import {
   generateUpdateArgsSchema,
@@ -43,6 +51,14 @@ import {
   generateUpdateManyArgsSchema,
   generateUpdateManyMutationInputSchema,
   generateUpsertArgsSchema,
+  generateUpdateWithoutInputSchemas,
+  generateUncheckedUpdateWithoutInputSchemas,
+  generateUpdateOneNestedWithoutInputSchemas,
+  generateUpdateManyNestedWithoutInputSchemas,
+  generateUpsertWithoutInputSchemas,
+  generateUpsertWithWhereUniqueWithoutInputSchemas,
+  generateUpdateWithWhereUniqueWithoutInputSchemas,
+  generateUpdateManyWithWhereWithoutInputSchemas,
 } from '../builders/update-args';
 import { generateDeleteArgsSchema, generateDeleteManyArgsSchema } from '../builders/delete-args';
 
@@ -140,15 +156,51 @@ import type { Prisma } from '@prisma/client';
   // Third pass: Generate create/update input schemas
   for (const model of models) {
     indexContent += `\n// ${model.name} Create/Update Inputs\n`;
-    indexContent += generateCreateInputSchema(model);
-    indexContent += generateUncheckedCreateInputSchema(model);
+    indexContent += generateCreateInputSchema(model, models);
+    indexContent += generateUncheckedCreateInputSchema(model, models);
+
+    // Context-specific CreateWithout schemas
+    indexContent += generateCreateWithoutInputSchemas(model, models);
+    indexContent += generateUncheckedCreateWithoutInputSchemas(model, models);
+    indexContent += generateCreateOrConnectWithoutInputSchemas(model);
+
+    // Context-specific nested schemas
+    indexContent += generateCreateNestedOneWithoutInputSchemas(model, models);
+    indexContent += generateCreateNestedManyWithoutInputSchemas(model, models);
+    indexContent += generateUncheckedCreateNestedManyWithoutInputSchemas(model, models);
+
+    // CreateMany envelope and input schemas
+    indexContent += generateCreateManyInputEnvelopeSchemas(model, models);
+    indexContent += generateCreateManyWithoutInputSchemas(model, models);
+
+    // Generic schemas (keep for backward compatibility if needed)
     indexContent += generateCreateNestedManyInputSchema(model);
     indexContent += generateUncheckedCreateNestedManyInputSchema(model);
     indexContent += generateCreateNestedOneInputSchema(model);
     indexContent += generateCreateOrConnectInputSchema(model);
     indexContent += generateCreateManyInputSchema(model);
-    indexContent += generateUpdateInputSchema(model);
+
+    // Update input schemas
+    indexContent += generateUpdateInputSchema(model, models);
     indexContent += generateUncheckedUpdateInputSchema(model);
+
+    // Context-specific UpdateWithout schemas
+    indexContent += generateUpdateWithoutInputSchemas(model, models);
+    indexContent += generateUncheckedUpdateWithoutInputSchemas(model);
+
+    // Context-specific nested update schemas
+    indexContent += generateUpdateOneNestedWithoutInputSchemas(model, models);
+    indexContent += generateUpdateManyNestedWithoutInputSchemas(model, models);
+
+    // Context-specific upsert schemas
+    indexContent += generateUpsertWithoutInputSchemas(model);
+    indexContent += generateUpsertWithWhereUniqueWithoutInputSchemas(model);
+
+    // Context-specific update with where schemas
+    indexContent += generateUpdateWithWhereUniqueWithoutInputSchemas(model);
+    indexContent += generateUpdateManyWithWhereWithoutInputSchemas(model);
+
+    // Generic update schemas
     indexContent += generateUpdateManyNestedInputSchema(model);
     indexContent += generateUpdateOneNestedInputSchema(model);
     indexContent += generateUpsertWithWhereUniqueInputSchema(model);
