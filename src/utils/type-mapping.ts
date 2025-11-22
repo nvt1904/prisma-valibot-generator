@@ -17,7 +17,7 @@ function getBaseValibotType(fieldType: string): string {
     Float: 'v.number()',
     Decimal: 'v.number()',
     Boolean: 'v.boolean()',
-    DateTime: 'v.pipe(v.string(), v.isoDateTime())',
+    DateTime: 'v.union([v.pipe(v.string(), v.isoDateTime()), v.date()])',
     Json: 'v.any()',
     Bytes: 'v.instance(Buffer)',
   };

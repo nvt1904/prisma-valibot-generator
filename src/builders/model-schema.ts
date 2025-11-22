@@ -12,13 +12,17 @@ export function generateModelSchema(model: DMMF.Model): string {
     // Skip relation fields in base schema
     if (field.kind === 'object') continue;
 
-    const valibotType =
+    let valibotType =
       field.kind === 'enum'
         ? `v.picklist(${field.type}Enum)`
         : getValibotType(field.type, field.isList);
 
-    const wrappedType = wrapOptional(valibotType, field.isRequired);
-    fields.push(`  ${field.name}: ${wrappedType},`);
+    // For nullable fields, use v.nullish() to accept both null and undefined
+    if (!field.isRequired) {
+      valibotType = `v.nullish(${valibotType})`;
+    }
+
+    fields.push(`  ${field.name}: ${valibotType},`);
   }
 
   return `export const ${schemaName} = v.object({

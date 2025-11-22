@@ -114,15 +114,15 @@ function getDirectValueSchema(field: DMMF.Field): string {
     Float: 'v.number()',
     Decimal: 'v.number()',
     Boolean: 'v.boolean()',
-    DateTime: 'v.pipe(v.string(), v.isoDateTime())',
+    DateTime: 'v.union([v.pipe(v.string(), v.isoDateTime()), v.date()])',
     Json: 'v.any()',
     Bytes: 'v.instance(Buffer)',
   };
 
   const baseSchema = typeMap[field.type] || 'v.any()';
 
-  // Handle nullable fields
-  return field.isRequired ? baseSchema : `v.nullable(${baseSchema})`;
+  // Handle nullable fields - use v.nullish() to allow both null and undefined
+  return field.isRequired ? baseSchema : `v.nullish(${baseSchema})`;
 }
 
 /**

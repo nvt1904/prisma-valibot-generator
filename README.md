@@ -1,315 +1,176 @@
-# Prisma Valibot Generator
+# @nvt1904/prisma-valibot-generator
 
-A Prisma generator that creates Valibot validation schemas for all your Prisma models with full support for all operations (findFirst, findMany, create, update, delete, etc.) and relations.
-
-## Installation
-
-```bash
-npm install @nvt1904/prisma-valibot-generator valibot
-
-yarn add @nvt1904/prisma-valibot-generator valibot
-```
-
-## Usage
-
-Add the generator to your `schema.prisma`:
-
-```prisma
-generator valibot {
-  provider = "prisma-valibot-generator"
-  output   = "../generated/valibot"
-}
-
-datasource db {
-  provider = "postgresql"
-  // Note: In Prisma 7+, the url is configured in prisma.config.ts
-}
-```
-
-For Prisma 7+, create `prisma/prisma.config.ts`:
-
-```typescript
-import { defineConfig } from 'prisma/config';
-
-export default defineConfig({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
-```
-
-For Prisma 5-6, you can still use the traditional approach:
-
-```prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-```
-
-Generate schemas:
-
-```bash
-npx prisma generate
-```
-
-## Generated Schemas
-
-The generator creates comprehensive Valibot schemas for:
-
-- **Model schemas**: Base validation for model data
-- **FindFirst/FindMany args**: With where, select, include, orderBy, skip, take, cursor, distinct
-- **Create/Update/Upsert args**: With nested creates and updates
-- **Delete/DeleteMany args**: With where filters
-- **Relation support**: Full nested query support with circular reference handling
-
-## Example Usage
-
-```typescript
-import * as v from 'valibot';
-import {
-  UserFindManyArgsSchema,
-  UserCreateArgsSchema,
-  PostIncludeSchema,
-} from './generated/valibot';
-
-// Validate findMany query
-const findManyArgs = v.parse(UserFindManyArgsSchema, {
-  where: {
-    email: { contains: '@example.com' },
-    posts: {
-      some: {
-        published: true,
-      },
-    },
-  },
-  include: {
-    posts: {
-      where: { published: true },
-      orderBy: { createdAt: 'desc' },
-    },
-    profile: true,
-  },
-  take: 10,
-});
-
-// Validate create mutation
-const createArgs = v.parse(UserCreateArgsSchema, {
-  data: {
-    email: 'user@example.com',
-    name: 'John Doe',
-    posts: {
-      create: [{ title: 'First Post', content: 'Hello World' }],
-    },
-  },
-});
-```
+A Prisma 7 generator that creates [Valibot](https://valibot.dev) validation schemas for every model in your schema. The output mirrors Prisma's DMMF so you can validate `find`, `create`, `update`, and `delete` operations with the same type safety you already get from `@prisma/client`.
 
 ## Features
 
-- ✅ Full TypeScript type safety
-- ✅ All Prisma operations supported
-- ✅ Nested relation queries
-- ✅ Circular reference handling with lazy schemas
-- ✅ Enum validation
-- ✅ Optional/nullable field handling
-- ✅ List relations with filters
-- ✅ Scalar filters (contains, startsWith, gt, lt, etc.)
-- ✅ **Conditional schema generation** - only generates schemas for types actually used in your Prisma schema
+- **Complete CRUD Coverage**: Generates model schemas plus all Prisma args (find, create, update, upsert, delete, many operations, and relation inputs)
+- **Smart Type Alignment**:
+  - WhereInput accepts both filter objects AND direct values (e.g., `name: "John"` or `name: { contains: "John" }`)
+  - DateTime fields accept both `Date` objects and ISO strings
+  - Nullable fields use `v.nullish()` to accept `null | undefined`
+  - Required relations in CreateInput are properly typed (no unnecessary `v.optional()`)
+- **Intelligent Conditional Generation**: Only generates filter schemas, aggregate inputs, and relation helpers when Prisma actually uses them, avoiding "has no exported member" errors
+- **Single File Output**: Emits one `index.ts` that imports `Prisma` types directly, keeping perfect parity with your schema
+- **Zero Configuration**: Ships as a standard Prisma generator - just add to `schema.prisma` and run `prisma generate`
 
-## Conditional Schema Generation
+## Requirements
 
-The generator intelligently analyzes your Prisma schema and **only generates schemas that Prisma Client actually exports**. This prevents TypeScript errors and significantly reduces the generated file size.
+- Node.js `>=20.19.0 || >=22.12.0 || >=24.0.0`
+- Prisma `>=7.0.0`
+- Valibot `>=0.42.0`
 
-### What Gets Generated Conditionally?
+## Installation
 
-#### 1. Enum Filters
-
-Only generates filter schemas for enums based on how they're actually used:
-
-```prisma
-enum UserRole {
-  USER
-  ADMIN
-}
-
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-}
-
-model User {
-  role   UserRole          // Required field
-  status PaymentStatus?    // Nullable field
-}
-```
-
-**Generated schemas:**
-
-- ✅ `UserRoleFilterSchema` (base filter, because it's required)
-- ✅ `PaymentStatusNullableFilterSchema` (nullable filter only)
-- ❌ `PaymentStatusFilterSchema` (NOT generated - only used as nullable)
-
-This prevents errors like:
-
-```typescript
-// Error: Namespace 'Prisma' has no exported member 'EnumPaymentStatusFilter'
-```
-
-#### 2. OrderByRelationAggregate
-
-Only generates aggregate order schemas for models used as **list relations**:
-
-```prisma
-model User {
-  posts Post[]      // List relation
-}
-
-model Post {
-  author User       // Single relation
-}
-
-model Label {
-  id String @id     // Not used in any relation
-}
-```
-
-**Generated schemas:**
-
-- ✅ `PostOrderByRelationAggregateInputSchema` (used as list: `posts Post[]`)
-- ❌ `UserOrderByRelationAggregateInputSchema` (only used as single relation)
-- ❌ `LabelOrderByRelationAggregateInputSchema` (not used in relations)
-
-This prevents errors like:
-
-```typescript
-// Error: Namespace 'Prisma' has no exported member 'LabelOrderByRelationAggregateInput'
-```
-
-#### 3. Scalar Type Filters
-
-Generates filter schemas based on actual scalar type usage (String, Int, BigInt, DateTime, etc.):
-
-```prisma
-model Product {
-  name        String
-  price       Float
-  stock       Int
-  // Note: BigInt, Bytes, Decimal are NOT used anywhere
-}
-```
-
-Currently, all scalar filter schemas are generated using local TypeScript types to maintain compatibility, but the conditional logic is in place for future optimization.
-
-### Benefits
-
-1. **No TypeScript Errors**: Eliminates errors from referencing Prisma types that don't exist
-2. **Smaller Output**: Reduces generated file size by excluding unnecessary schemas
-3. **Perfect Type Alignment**: Generated schemas exactly match Prisma Client's exported types
-4. **Automatic**: No configuration needed - works automatically based on your schema
-
-## Development
-
-### Building
-
-The project uses [tsup](https://tsup.egoist.dev/) for fast, zero-config bundling:
+Add the generator (dev) dependency along with the required peers:
 
 ```bash
-# Build once
-npm run build
+# yarn
+yarn add -D @nvt1904/prisma-valibot-generator valibot
 
-# Watch mode for development
-npm run dev
+# npm
+npm install -D @nvt1904/prisma-valibot-generator valibot
+
+# pnpm
+pnpm add -D @nvt1904/prisma-valibot-generator valibot
 ```
 
-### Linting and Formatting
+Make sure `@prisma/client` and `prisma` are already part of your project so the generator can reference Prisma's types.
 
-The project uses ESLint 9 with TypeScript support and Prettier for code formatting:
+## Usage
 
-```bash
-# Run ESLint
-npm run lint
+1. Add a generator block to `schema.prisma`:
 
-# Fix ESLint issues automatically
-npm run lint:fix
+   ```prisma
+   generator client {
+     provider = "prisma-client-js"
+   }
 
-# Format code with Prettier
-npm run format
-
-# Check formatting without modifying files
-npm run format:check
-
-# Type check without emitting files
-npm run type-check
-```
-
-### Testing
-
-After making changes, test the generator:
-
-```bash
-npm run build
-npx prisma generate
-```
-
-### Project Structure
-
-- `src/generator.ts` - Main generator entry point
-- `src/builders/` - Schema builders for different Prisma operations
-- `src/lib/` - Core generation logic
-- `src/utils/` - Helper utilities
-
-## Releasing New Versions
-
-This package uses automated CI/CD with GitHub Actions to publish to npm.
-
-### Prerequisites
-
-1. **Set up NPM_TOKEN secret** in your GitHub repository:
-   - Go to [npmjs.com](https://www.npmjs.com/) and generate an automation token
-   - In your GitHub repo, go to Settings → Secrets and variables → Actions
-   - Add a new repository secret named `NPM_TOKEN` with your npm token
-
-### Release Process
-
-1. **Update version** in `package.json`:
-
-   ```bash
-   # For patch releases (bug fixes)
-   npm version patch
-
-   # For minor releases (new features)
-   npm version minor
-
-   # For major releases (breaking changes)
-   npm version major
+   generator valibot {
+     provider = "prisma-valibot-generator"
+     output   = "../generated/valibot" // optional, defaults to ../generated/valibot
+   }
    ```
 
-2. **Push the version tag**:
+2. Run Prisma generate whenever your schema changes:
 
    ```bash
-   git push origin main --follow-tags
+   npx prisma generate
    ```
 
-3. **Automatic publishing**: GitHub Actions will automatically:
-   - Run tests (type-check, lint, build)
-   - Publish to npm with provenance
-   - Create a GitHub release
+The generator removes the output folder before emitting a new `index.ts`. The file imports `@prisma/client` types and exports every Valibot schema that corresponds to your Prisma models.
 
-### CI/CD Workflows
+### Importing the schemas
 
-- **CI** (`.github/workflows/ci.yml`): Runs on every push and PR
-  - Tests on Node.js 18 and 20
-  - Type checking, linting, building
-  - Prisma schema generation test
+Use the generated helpers anywhere you would normally call Prisma:
 
-- **Publish** (`.github/workflows/publish.yml`): Runs on version tags (`v*`)
-  - Builds the package
-  - Publishes to npm with provenance attestation
-  - Requires `NPM_TOKEN` secret
+```ts
+import * as v from 'valibot';
+import {
+  UserCreateInputSchema,
+  UserFindManyArgsSchema,
+  UserWhereInputSchema,
+} from '../generated/valibot';
+
+// Create operations - accepts Date objects or ISO strings
+const payload = v.parse(UserCreateInputSchema, {
+  email: 'user@example.com',
+  name: 'John Doe',
+  createdAt: new Date(), // Date object works!
+  profile: null, // Nullable fields accept null
+});
+await prisma.user.create({ data: payload });
+
+// Query operations - flexible filtering
+const query = v.parse(UserFindManyArgsSchema, {
+  where: {
+    email: 'user@example.com', // Direct value
+    name: { contains: 'John' }, // Or filter object
+    createdAt: { gte: new Date('2024-01-01') }, // Date object in filters
+  },
+  take: 10,
+});
+const users = await prisma.user.findMany(query);
+
+// WhereInput for custom queries
+const filter = v.parse(UserWhereInputSchema, {
+  OR: [
+    { email: { endsWith: '@example.com' } },
+    { role: 'ADMIN' }, // Direct enum value
+  ],
+});
+```
+
+Because the generator re-uses Prisma's DMMF, every schema stays aligned with your relations, nested inputs, conditional filters, and enums.
+
+### Type Safety Features
+
+#### DateTime Flexibility
+
+DateTime fields accept both `Date` objects and ISO strings:
+
+```ts
+// Both are valid
+createdAt: new Date();
+createdAt: '2024-01-01T00:00:00.000Z';
+```
+
+#### Nullable Fields
+
+Nullable fields use `v.nullish()` to accept `null`, `undefined`, or a value:
+
+```ts
+// Model schema
+description: v.nullish(v.string()); // string | null | undefined
+
+// CreateInput schema
+description: v.optional(v.nullable(v.string())); // Can omit or set null
+```
+
+#### WhereInput Unions
+
+Filter fields accept either a filter object OR a direct value:
+
+```ts
+where: {
+  name: 'John',                    // Direct string
+  email: { contains: '@example' }, // Filter object
+  age: { gte: 18 },                // Comparison
+}
+```
+
+#### Required Relations
+
+Required relations in CreateInput are properly typed:
+
+```ts
+// Account model has required User relation
+AccountCreateInputSchema = v.object({
+  user: v.lazy(() => UserCreateNestedOneInputSchema), // Required, not optional!
+  // ... other fields
+});
+```
+
+### Customizing the output path
+
+The `output` argument inside the generator block accepts a relative or absolute path. Example:
+
+```prisma
+output = "./src/prisma/valibot"
+```
+
+Whatever path you choose, import from the generated `index.ts` file.
+
+## Contributing / Scripts
+
+Local development uses `tsup` for builds. Helpful commands:
+
+```bash
+yarn build        # emit dist
+yarn lint         # run eslint
+yarn type-check   # ensure type safety
+```
 
 ## License
 
-MIT
+[MIT](LICENSE)

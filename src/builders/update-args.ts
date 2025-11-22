@@ -43,10 +43,15 @@ export function generateUpdateInputSchema(model: DMMF.Model): string {
       if (isRelationForeignKey) continue;
 
       // Scalar/enum fields - all optional in update
-      const valibotType =
+      let valibotType =
         field.kind === 'enum'
           ? `v.picklist(${field.type}Enum)`
           : getValibotType(field.type, field.isList);
+
+      // Wrap with v.nullable() if field is nullable
+      if (!field.isRequired) {
+        valibotType = `v.nullable(${valibotType})`;
+      }
 
       fields.push(`  ${field.name}: v.optional(${valibotType}),`);
     }
@@ -72,10 +77,15 @@ export function generateUncheckedUpdateInputSchema(model: DMMF.Model): string {
     }
 
     // Include all scalar/enum fields (including foreign keys)
-    const valibotType =
+    let valibotType =
       field.kind === 'enum'
         ? `v.picklist(${field.type}Enum)`
         : getValibotType(field.type, field.isList);
+
+    // Wrap with v.nullable() if field is nullable
+    if (!field.isRequired) {
+      valibotType = `v.nullable(${valibotType})`;
+    }
 
     fields.push(`  ${field.name}: v.optional(${valibotType}),`);
   }

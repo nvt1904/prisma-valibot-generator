@@ -43,10 +43,15 @@ export function generateCreateInputSchema(model: DMMF.Model): string {
       if (isRelationForeignKey) continue;
 
       // Scalar/enum fields
-      const valibotType =
+      let valibotType =
         field.kind === 'enum'
           ? `v.picklist(${field.type}Enum)`
           : getValibotType(field.type, field.isList);
+
+      // Wrap with v.nullable() if field is nullable (not required and no default)
+      if (!field.isRequired && !field.hasDefaultValue) {
+        valibotType = `v.nullable(${valibotType})`;
+      }
 
       const wrappedType = wrapOptional(valibotType, field.isRequired && !field.hasDefaultValue);
       fields.push(`  ${field.name}: ${wrappedType},`);
@@ -79,10 +84,15 @@ export function generateUncheckedCreateInputSchema(model: DMMF.Model): string {
     }
 
     // Scalar/enum fields (including foreign keys)
-    const valibotType =
+    let valibotType =
       field.kind === 'enum'
         ? `v.picklist(${field.type}Enum)`
         : getValibotType(field.type, field.isList);
+
+    // Wrap with v.nullable() if field is nullable (not required and no default)
+    if (!field.isRequired && !field.hasDefaultValue) {
+      valibotType = `v.nullable(${valibotType})`;
+    }
 
     const wrappedType = wrapOptional(valibotType, field.isRequired && !field.hasDefaultValue);
     fields.push(`  ${field.name}: ${wrappedType},`);
