@@ -114,7 +114,7 @@ function getDirectValueSchema(field: DMMF.Field): string {
     Float: 'v.number()',
     Decimal: 'v.number()',
     Boolean: 'v.boolean()',
-    DateTime: 'v.union([v.pipe(v.string(), v.isoDateTime()), v.date()])',
+    DateTime: 'v.union([v.pipe(v.string(), v.isoTimestamp()), v.date()])',
     Json: 'v.any()',
     Bytes: 'v.instance(Buffer)',
   };
@@ -531,30 +531,30 @@ export const BoolNullableFilterSchema: v.GenericSchema<BoolNullableFilter> = v.l
 // DateTime filters
 export const DateTimeFilterSchema: v.GenericSchema<DateTimeFilter> = v.lazy(() =>
   v.object({
-    equals: v.optional(v.pipe(v.string(), v.isoDateTime())),
-    in: v.optional(v.array(v.pipe(v.string(), v.isoDateTime()))),
-    notIn: v.optional(v.array(v.pipe(v.string(), v.isoDateTime()))),
-    lt: v.optional(v.pipe(v.string(), v.isoDateTime())),
-    lte: v.optional(v.pipe(v.string(), v.isoDateTime())),
-    gt: v.optional(v.pipe(v.string(), v.isoDateTime())),
-    gte: v.optional(v.pipe(v.string(), v.isoDateTime())),
+    equals: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    in: v.optional(v.array(v.pipe(v.string(), v.isoTimestamp()))),
+    notIn: v.optional(v.array(v.pipe(v.string(), v.isoTimestamp()))),
+    lt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    lte: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    gt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    gte: v.optional(v.pipe(v.string(), v.isoTimestamp())),
     not: v.optional(
-      v.lazy(() => v.union([v.pipe(v.string(), v.isoDateTime()), DateTimeFilterSchema]))
+      v.lazy(() => v.union([v.pipe(v.string(), v.isoTimestamp()), DateTimeFilterSchema]))
     ),
   })
 );
 
 export const DateTimeNullableFilterSchema: v.GenericSchema<DateTimeNullableFilter> = v.lazy(() =>
   v.object({
-    equals: v.optional(v.nullable(v.pipe(v.string(), v.isoDateTime()))),
-    in: v.optional(v.nullable(v.array(v.pipe(v.string(), v.isoDateTime())))),
-    notIn: v.optional(v.nullable(v.array(v.pipe(v.string(), v.isoDateTime())))),
-    lt: v.optional(v.pipe(v.string(), v.isoDateTime())),
-    lte: v.optional(v.pipe(v.string(), v.isoDateTime())),
-    gt: v.optional(v.pipe(v.string(), v.isoDateTime())),
-    gte: v.optional(v.pipe(v.string(), v.isoDateTime())),
+    equals: v.optional(v.nullable(v.pipe(v.string(), v.isoTimestamp()))),
+    in: v.optional(v.nullable(v.array(v.pipe(v.string(), v.isoTimestamp())))),
+    notIn: v.optional(v.nullable(v.array(v.pipe(v.string(), v.isoTimestamp())))),
+    lt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    lte: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    gt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    gte: v.optional(v.pipe(v.string(), v.isoTimestamp())),
     not: v.optional(
-      v.lazy(() => v.union([v.nullable(v.pipe(v.string(), v.isoDateTime())), DateTimeNullableFilterSchema]))
+      v.lazy(() => v.union([v.nullable(v.pipe(v.string(), v.isoTimestamp())), DateTimeNullableFilterSchema]))
     ),
   })
 );
@@ -635,10 +635,10 @@ export const BoolListFilterSchema: v.GenericSchema<BoolListFilter> = v.object({
 });
 
 export const DateTimeListFilterSchema: v.GenericSchema<DateTimeListFilter> = v.object({
-  equals: v.optional(v.array(v.pipe(v.string(), v.isoDateTime()))),
-  has: v.optional(v.pipe(v.string(), v.isoDateTime())),
-  hasSome: v.optional(v.array(v.pipe(v.string(), v.isoDateTime()))),
-  hasEvery: v.optional(v.array(v.pipe(v.string(), v.isoDateTime()))),
+  equals: v.optional(v.array(v.pipe(v.string(), v.isoTimestamp()))),
+  has: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+  hasSome: v.optional(v.array(v.pipe(v.string(), v.isoTimestamp()))),
+  hasEvery: v.optional(v.array(v.pipe(v.string(), v.isoTimestamp()))),
   isEmpty: v.optional(v.boolean()),
 });
 

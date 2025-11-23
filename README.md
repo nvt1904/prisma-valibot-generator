@@ -170,7 +170,7 @@ The generator maps Prisma types to Valibot schemas as follows:
 | `Decimal` | `v.number()` | Mapped to number for easier handling in JS/TS |
 | `BigInt` | `v.bigint()` | |
 | `Boolean` | `v.boolean()` | |
-| `DateTime` | `v.union([v.pipe(v.string(), v.isoDateTime()), v.date()])` | Accepts Date objects or ISO strings |
+| `DateTime` | `v.union([v.pipe(v.string(), v.isoTimestamp()), v.date()])` | Accepts Date objects or ISO timestamp strings |
 | `Json` | `v.any()` | |
 | `Bytes` | `v.instance(Buffer)` | |
 | `Enum` | `v.picklist(Enum)` | |

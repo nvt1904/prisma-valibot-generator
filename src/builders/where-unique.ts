@@ -63,7 +63,7 @@ function getScalarType(type: string): string {
     Float: 'v.number()',
     Decimal: 'v.number()',
     Boolean: 'v.boolean()',
-    DateTime: 'v.pipe(v.string(), v.isoDateTime())',
+    DateTime: 'v.pipe(v.string(), v.isoTimestamp())',
     Json: 'v.any()',
     Bytes: 'v.instance(Buffer)',
   };
