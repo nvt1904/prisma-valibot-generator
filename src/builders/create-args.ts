@@ -168,8 +168,8 @@ ${fields.join('\n')}
  */
 export function generateUncheckedCreateNestedManyInputSchema(model: DMMF.Model): string {
   return `export const ${model.name}UncheckedCreateNestedManyInputSchema = v.lazy(() => v.object({
-  create: v.optional(v.union([v.lazy(() => ${model.name}UncheckedCreateInputSchema), v.array(v.lazy(() => ${model.name}UncheckedCreateInputSchema))])),
-  connectOrCreate: v.optional(v.union([v.lazy(() => ${model.name}CreateOrConnectInputSchema), v.array(v.lazy(() => ${model.name}CreateOrConnectInputSchema))])),
+  create: v.optional(v.union([${model.name}UncheckedCreateInputSchema, v.array(${model.name}UncheckedCreateInputSchema)])),
+  connectOrCreate: v.optional(v.union([${model.name}CreateOrConnectInputSchema, v.array(${model.name}CreateOrConnectInputSchema)])),
   connect: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
 }));
 `;
@@ -180,8 +180,8 @@ export function generateUncheckedCreateNestedManyInputSchema(model: DMMF.Model):
  */
 export function generateCreateNestedManyInputSchema(model: DMMF.Model): string {
   return `export const ${model.name}CreateNestedManyInputSchema = v.lazy(() => v.object({
-  create: v.optional(v.union([v.lazy(() => ${model.name}CreateInputSchema), v.array(v.lazy(() => ${model.name}CreateInputSchema))])),
-  connectOrCreate: v.optional(v.union([v.lazy(() => ${model.name}CreateOrConnectInputSchema), v.array(v.lazy(() => ${model.name}CreateOrConnectInputSchema))])),
+  create: v.optional(v.union([${model.name}CreateInputSchema, v.array(${model.name}CreateInputSchema)])),
+  connectOrCreate: v.optional(v.union([${model.name}CreateOrConnectInputSchema, v.array(${model.name}CreateOrConnectInputSchema)])),
   connect: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
 }));
 `;
@@ -192,8 +192,8 @@ export function generateCreateNestedManyInputSchema(model: DMMF.Model): string {
  */
 export function generateCreateNestedOneInputSchema(model: DMMF.Model): string {
   return `export const ${model.name}CreateNestedOneInputSchema = v.lazy(() => v.object({
-  create: v.optional(v.lazy(() => ${model.name}CreateInputSchema)),
-  connectOrCreate: v.optional(v.lazy(() => ${model.name}CreateOrConnectInputSchema)),
+  create: v.optional(${model.name}CreateInputSchema),
+  connectOrCreate: v.optional(${model.name}CreateOrConnectInputSchema),
   connect: v.optional(${model.name}WhereUniqueInputSchema),
 }));
 `;
@@ -227,8 +227,8 @@ export function generateCreateNestedOneWithoutInputSchemas(
           reverseFieldName.charAt(0).toUpperCase() + reverseFieldName.slice(1);
 
         output += `export const ${model.name}CreateNestedOneWithout${reverseFieldCapitalized}InputSchema = v.lazy(() => v.object({
-  create: v.optional(v.union([v.lazy(() => ${model.name}CreateWithout${reverseFieldCapitalized}InputSchema), v.lazy(() => ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema)])),
-  connectOrCreate: v.optional(v.lazy(() => ${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema)),
+  create: v.optional(v.union([${model.name}CreateWithout${reverseFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema])),
+  connectOrCreate: v.optional(${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema),
   connect: v.optional(${model.name}WhereUniqueInputSchema),
 }));
 
@@ -268,9 +268,9 @@ export function generateCreateNestedManyWithoutInputSchemas(
           reverseFieldName.charAt(0).toUpperCase() + reverseFieldName.slice(1);
 
         output += `export const ${model.name}CreateNestedManyWithout${reverseFieldCapitalized}InputSchema = v.lazy(() => v.object({
-  create: v.optional(v.union([v.lazy(() => ${model.name}CreateWithout${reverseFieldCapitalized}InputSchema), v.lazy(() => ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema), v.array(v.lazy(() => ${model.name}CreateWithout${reverseFieldCapitalized}InputSchema)), v.array(v.lazy(() => ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema))])),
-  connectOrCreate: v.optional(v.union([v.lazy(() => ${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema), v.array(v.lazy(() => ${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema))])),
-  createMany: v.optional(v.lazy(() => ${model.name}CreateMany${reverseFieldCapitalized}InputEnvelopeSchema)),
+  create: v.optional(v.union([${model.name}CreateWithout${reverseFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema, v.array(${model.name}CreateWithout${reverseFieldCapitalized}InputSchema), v.array(${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema)])),
+  connectOrCreate: v.optional(v.union([${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema, v.array(${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema)])),
+  createMany: v.optional(${model.name}CreateMany${reverseFieldCapitalized}InputEnvelopeSchema),
   connect: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
 }));
 
@@ -440,7 +440,7 @@ export function generateCreateOrConnectWithoutInputSchemas(model: DMMF.Model): s
       excludedField.name.charAt(0).toUpperCase() + excludedField.name.slice(1);
     output += `export const ${model.name}CreateOrConnectWithout${excludedFieldCapitalized}InputSchema = v.lazy(() => v.object({
   where: ${model.name}WhereUniqueInputSchema,
-  create: v.union([v.lazy(() => ${model.name}CreateWithout${excludedFieldCapitalized}InputSchema), v.lazy(() => ${model.name}UncheckedCreateWithout${excludedFieldCapitalized}InputSchema)]),
+  create: v.union([${model.name}CreateWithout${excludedFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${excludedFieldCapitalized}InputSchema]),
 }));
 
 `;
@@ -475,7 +475,7 @@ export function generateCreateManyInputEnvelopeSchemas(
           reverseFieldName.charAt(0).toUpperCase() + reverseFieldName.slice(1);
 
         output += `export const ${model.name}CreateMany${reverseFieldCapitalized}InputEnvelopeSchema = v.lazy(() => v.object({
-  data: v.union([v.lazy(() => ${model.name}CreateMany${reverseFieldCapitalized}InputSchema), v.array(v.lazy(() => ${model.name}CreateMany${reverseFieldCapitalized}InputSchema))]),
+  data: v.union([${model.name}CreateMany${reverseFieldCapitalized}InputSchema, v.array(${model.name}CreateMany${reverseFieldCapitalized}InputSchema)]),
   skipDuplicates: v.optional(v.boolean()),
 }));
 
@@ -569,9 +569,9 @@ export function generateUncheckedCreateNestedManyWithoutInputSchemas(
           reverseFieldName.charAt(0).toUpperCase() + reverseFieldName.slice(1);
 
         output += `export const ${model.name}UncheckedCreateNestedManyWithout${reverseFieldCapitalized}InputSchema = v.lazy(() => v.object({
-  create: v.optional(v.union([v.lazy(() => ${model.name}CreateWithout${reverseFieldCapitalized}InputSchema), v.lazy(() => ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema), v.array(v.lazy(() => ${model.name}CreateWithout${reverseFieldCapitalized}InputSchema)), v.array(v.lazy(() => ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema))])),
-  connectOrCreate: v.optional(v.union([v.lazy(() => ${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema), v.array(v.lazy(() => ${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema))])),
-  createMany: v.optional(v.lazy(() => ${model.name}CreateMany${reverseFieldCapitalized}InputEnvelopeSchema)),
+  create: v.optional(v.union([${model.name}CreateWithout${reverseFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema, v.array(${model.name}CreateWithout${reverseFieldCapitalized}InputSchema), v.array(${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema)])),
+  connectOrCreate: v.optional(v.union([${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema, v.array(${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema)])),
+  createMany: v.optional(${model.name}CreateMany${reverseFieldCapitalized}InputEnvelopeSchema),
   connect: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
 }));
 
@@ -589,7 +589,7 @@ export function generateUncheckedCreateNestedManyWithoutInputSchemas(
 export function generateCreateOrConnectInputSchema(model: DMMF.Model): string {
   return `export const ${model.name}CreateOrConnectInputSchema = v.lazy(() => v.object({
   where: ${model.name}WhereUniqueInputSchema,
-  create: v.lazy(() => ${model.name}CreateInputSchema),
+  create: ${model.name}CreateInputSchema,
 }));
 `;
 }

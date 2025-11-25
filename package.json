@@ -1,6 +1,6 @@
 {
   "name": "@nvt1904/prisma-valibot-generator",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "publishConfig": {
     "access": "public",
     "tag": "beta"

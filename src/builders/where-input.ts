@@ -47,26 +47,30 @@ export function generateWhereInputSchema(model: DMMF.Model): string {
         // This matches Prisma's type definitions:
         // - Nullable: XOR<ProfileNullableScalarRelationFilter, ProfileWhereInput> | null
         // - Required: XOR<UserScalarRelationFilter, UserWhereInput>
+        //
+        // IMPORTANT: WhereInputSchema must come BEFORE the wrapper object in the union.
+        // Otherwise, the wrapper object (with optional is/isNot) will match first and
+        // strip out properties like OR/AND/NOT from direct WhereInput usage.
         if (field.isRequired) {
           // Required relation: XOR<RelationFilter, WhereInput>
           schemaFields.push(
             `  ${field.name}: v.optional(v.lazy(() => v.union([`,
+            `    ${field.type}WhereInputSchema,`,
             `    v.object({`,
-            `      is: v.optional(v.lazy(() => ${field.type}WhereInputSchema)),`,
-            `      isNot: v.optional(v.lazy(() => ${field.type}WhereInputSchema)),`,
-            `    }),`,
-            `    ${field.type}WhereInputSchema`,
+            `      is: v.optional(${field.type}WhereInputSchema),`,
+            `      isNot: v.optional(${field.type}WhereInputSchema),`,
+            `    })`,
             `  ]))),`
           );
         } else {
           // Nullable relation: XOR<NullableRelationFilter, WhereInput> | null
           schemaFields.push(
             `  ${field.name}: v.optional(v.lazy(() => v.union([`,
-            `    v.object({`,
-            `      is: v.optional(v.nullable(v.lazy(() => ${field.type}WhereInputSchema))),`,
-            `      isNot: v.optional(v.nullable(v.lazy(() => ${field.type}WhereInputSchema))),`,
-            `    }),`,
             `    ${field.type}WhereInputSchema,`,
+            `    v.object({`,
+            `      is: v.optional(v.nullable(${field.type}WhereInputSchema)),`,
+            `      isNot: v.optional(v.nullable(${field.type}WhereInputSchema)),`,
+            `    }),`,
             `    v.null()`,
             `  ]))),`
           );

@@ -153,16 +153,16 @@ ${fields.join('\n')}
  */
 export function generateUpdateManyNestedInputSchema(model: DMMF.Model): string {
   return `export const ${model.name}UpdateManyNestedInputSchema = v.lazy(() => v.object({
-  create: v.optional(v.union([v.lazy(() => ${model.name}CreateInputSchema), v.array(v.lazy(() => ${model.name}CreateInputSchema))])),
-  connectOrCreate: v.optional(v.union([v.lazy(() => ${model.name}CreateOrConnectInputSchema), v.array(v.lazy(() => ${model.name}CreateOrConnectInputSchema))])),
-  upsert: v.optional(v.union([v.lazy(() => ${model.name}UpsertWithWhereUniqueInputSchema), v.array(v.lazy(() => ${model.name}UpsertWithWhereUniqueInputSchema))])),
+  create: v.optional(v.union([${model.name}CreateInputSchema, v.array(${model.name}CreateInputSchema)])),
+  connectOrCreate: v.optional(v.union([${model.name}CreateOrConnectInputSchema, v.array(${model.name}CreateOrConnectInputSchema)])),
+  upsert: v.optional(v.union([${model.name}UpsertWithWhereUniqueInputSchema, v.array(${model.name}UpsertWithWhereUniqueInputSchema)])),
   set: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
   disconnect: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
   delete: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
   connect: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
-  update: v.optional(v.union([v.lazy(() => ${model.name}UpdateWithWhereUniqueInputSchema), v.array(v.lazy(() => ${model.name}UpdateWithWhereUniqueInputSchema))])),
-  updateMany: v.optional(v.union([v.lazy(() => ${model.name}UpdateManyWithWhereInputSchema), v.array(v.lazy(() => ${model.name}UpdateManyWithWhereInputSchema))])),
-  deleteMany: v.optional(v.union([v.lazy(() => ${model.name}WhereInputSchema), v.array(v.lazy(() => ${model.name}WhereInputSchema))])),
+  update: v.optional(v.union([${model.name}UpdateWithWhereUniqueInputSchema, v.array(${model.name}UpdateWithWhereUniqueInputSchema)])),
+  updateMany: v.optional(v.union([${model.name}UpdateManyWithWhereInputSchema, v.array(${model.name}UpdateManyWithWhereInputSchema)])),
+  deleteMany: v.optional(v.union([${model.name}WhereInputSchema, v.array(${model.name}WhereInputSchema)])),
 }));
 `;
 }
@@ -172,13 +172,13 @@ export function generateUpdateManyNestedInputSchema(model: DMMF.Model): string {
  */
 export function generateUpdateOneNestedInputSchema(model: DMMF.Model): string {
   return `export const ${model.name}UpdateOneNestedInputSchema = v.lazy(() => v.object({
-  create: v.optional(v.lazy(() => ${model.name}CreateInputSchema)),
-  connectOrCreate: v.optional(v.lazy(() => ${model.name}CreateOrConnectInputSchema)),
-  upsert: v.optional(v.lazy(() => ${model.name}UpsertInputSchema)),
+  create: v.optional(${model.name}CreateInputSchema),
+  connectOrCreate: v.optional(${model.name}CreateOrConnectInputSchema),
+  upsert: v.optional(${model.name}UpsertInputSchema),
   disconnect: v.optional(v.boolean()),
   delete: v.optional(v.boolean()),
   connect: v.optional(${model.name}WhereUniqueInputSchema),
-  update: v.optional(v.lazy(() => ${model.name}UpdateInputSchema)),
+  update: v.optional(${model.name}UpdateInputSchema),
 }));
 `;
 }
@@ -189,8 +189,8 @@ export function generateUpdateOneNestedInputSchema(model: DMMF.Model): string {
 export function generateUpsertWithWhereUniqueInputSchema(model: DMMF.Model): string {
   return `export const ${model.name}UpsertWithWhereUniqueInputSchema = v.lazy(() => v.object({
   where: ${model.name}WhereUniqueInputSchema,
-  update: v.lazy(() => ${model.name}UpdateInputSchema),
-  create: v.lazy(() => ${model.name}CreateInputSchema),
+  update: ${model.name}UpdateInputSchema,
+  create: ${model.name}CreateInputSchema,
 }));
 `;
 }
@@ -200,8 +200,8 @@ export function generateUpsertWithWhereUniqueInputSchema(model: DMMF.Model): str
  */
 export function generateUpsertInputSchema(model: DMMF.Model): string {
   return `export const ${model.name}UpsertInputSchema = v.lazy(() => v.object({
-  update: v.lazy(() => ${model.name}UpdateInputSchema),
-  create: v.lazy(() => ${model.name}CreateInputSchema),
+  update: ${model.name}UpdateInputSchema,
+  create: ${model.name}CreateInputSchema,
 }));
 `;
 }
@@ -212,7 +212,7 @@ export function generateUpsertInputSchema(model: DMMF.Model): string {
 export function generateUpdateWithWhereUniqueInputSchema(model: DMMF.Model): string {
   return `export const ${model.name}UpdateWithWhereUniqueInputSchema = v.lazy(() => v.object({
   where: ${model.name}WhereUniqueInputSchema,
-  data: v.lazy(() => ${model.name}UpdateInputSchema),
+  data: ${model.name}UpdateInputSchema,
 }));
 `;
 }
@@ -222,8 +222,8 @@ export function generateUpdateWithWhereUniqueInputSchema(model: DMMF.Model): str
  */
 export function generateUpdateManyWithWhereInputSchema(model: DMMF.Model): string {
   return `export const ${model.name}UpdateManyWithWhereInputSchema = v.lazy(() => v.object({
-  where: v.lazy(() => ${model.name}WhereInputSchema),
-  data: v.lazy(() => ${model.name}UpdateManyMutationInputSchema),
+  where: ${model.name}WhereInputSchema,
+  data: ${model.name}UpdateManyMutationInputSchema,
 }));
 `;
 }
@@ -441,13 +441,13 @@ export function generateUpdateOneNestedWithoutInputSchemas(
           reverseFieldName.charAt(0).toUpperCase() + reverseFieldName.slice(1);
 
         output += `export const ${model.name}UpdateOneWithout${reverseFieldCapitalized}NestedInputSchema = v.lazy(() => v.object({
-  create: v.optional(v.union([v.lazy(() => ${model.name}CreateWithout${reverseFieldCapitalized}InputSchema), v.lazy(() => ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema)])),
-  connectOrCreate: v.optional(v.lazy(() => ${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema)),
-  upsert: v.optional(v.lazy(() => ${model.name}UpsertWithout${reverseFieldCapitalized}InputSchema)),
+  create: v.optional(v.union([${model.name}CreateWithout${reverseFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema])),
+  connectOrCreate: v.optional(${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema),
+  upsert: v.optional(${model.name}UpsertWithout${reverseFieldCapitalized}InputSchema),
   disconnect: v.optional(v.boolean()),
   delete: v.optional(v.boolean()),
   connect: v.optional(${model.name}WhereUniqueInputSchema),
-  update: v.optional(v.union([v.lazy(() => ${model.name}UpdateWithout${reverseFieldCapitalized}InputSchema), v.lazy(() => ${model.name}UncheckedUpdateWithout${reverseFieldCapitalized}InputSchema)])),
+  update: v.optional(v.union([${model.name}UpdateWithout${reverseFieldCapitalized}InputSchema, ${model.name}UncheckedUpdateWithout${reverseFieldCapitalized}InputSchema])),
 }));
 
 `;
@@ -485,16 +485,16 @@ export function generateUpdateManyNestedWithoutInputSchemas(
           reverseFieldName.charAt(0).toUpperCase() + reverseFieldName.slice(1);
 
         output += `export const ${model.name}UpdateManyWithout${reverseFieldCapitalized}NestedInputSchema = v.lazy(() => v.object({
-  create: v.optional(v.union([v.lazy(() => ${model.name}CreateWithout${reverseFieldCapitalized}InputSchema), v.lazy(() => ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema), v.array(v.lazy(() => ${model.name}CreateWithout${reverseFieldCapitalized}InputSchema)), v.array(v.lazy(() => ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema))])),
-  connectOrCreate: v.optional(v.union([v.lazy(() => ${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema), v.array(v.lazy(() => ${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema))])),
-  upsert: v.optional(v.union([v.lazy(() => ${model.name}UpsertWithWhereUniqueWithout${reverseFieldCapitalized}InputSchema), v.array(v.lazy(() => ${model.name}UpsertWithWhereUniqueWithout${reverseFieldCapitalized}InputSchema))])),
+  create: v.optional(v.union([${model.name}CreateWithout${reverseFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema, v.array(${model.name}CreateWithout${reverseFieldCapitalized}InputSchema), v.array(${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema)])),
+  connectOrCreate: v.optional(v.union([${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema, v.array(${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema)])),
+  upsert: v.optional(v.union([${model.name}UpsertWithWhereUniqueWithout${reverseFieldCapitalized}InputSchema, v.array(${model.name}UpsertWithWhereUniqueWithout${reverseFieldCapitalized}InputSchema)])),
   set: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
   disconnect: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
   delete: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
   connect: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
-  update: v.optional(v.union([v.lazy(() => ${model.name}UpdateWithWhereUniqueWithout${reverseFieldCapitalized}InputSchema), v.array(v.lazy(() => ${model.name}UpdateWithWhereUniqueWithout${reverseFieldCapitalized}InputSchema))])),
-  updateMany: v.optional(v.union([v.lazy(() => ${model.name}UpdateManyWithWhereWithout${reverseFieldCapitalized}InputSchema), v.array(v.lazy(() => ${model.name}UpdateManyWithWhereWithout${reverseFieldCapitalized}InputSchema))])),
-  deleteMany: v.optional(v.union([v.lazy(() => ${model.name}WhereInputSchema), v.array(v.lazy(() => ${model.name}WhereInputSchema))])),
+  update: v.optional(v.union([${model.name}UpdateWithWhereUniqueWithout${reverseFieldCapitalized}InputSchema, v.array(${model.name}UpdateWithWhereUniqueWithout${reverseFieldCapitalized}InputSchema)])),
+  updateMany: v.optional(v.union([${model.name}UpdateManyWithWhereWithout${reverseFieldCapitalized}InputSchema, v.array(${model.name}UpdateManyWithWhereWithout${reverseFieldCapitalized}InputSchema)])),
+  deleteMany: v.optional(v.union([${model.name}WhereInputSchema, v.array(${model.name}WhereInputSchema)])),
 }));
 
 `;
@@ -519,8 +519,8 @@ export function generateUpsertWithoutInputSchemas(model: DMMF.Model): string {
     const excludedFieldCapitalized =
       excludedField.name.charAt(0).toUpperCase() + excludedField.name.slice(1);
     output += `export const ${model.name}UpsertWithout${excludedFieldCapitalized}InputSchema = v.lazy(() => v.object({
-  update: v.union([v.lazy(() => ${model.name}UpdateWithout${excludedFieldCapitalized}InputSchema), v.lazy(() => ${model.name}UncheckedUpdateWithout${excludedFieldCapitalized}InputSchema)]),
-  create: v.union([v.lazy(() => ${model.name}CreateWithout${excludedFieldCapitalized}InputSchema), v.lazy(() => ${model.name}UncheckedCreateWithout${excludedFieldCapitalized}InputSchema)]),
+  update: v.union([${model.name}UpdateWithout${excludedFieldCapitalized}InputSchema, ${model.name}UncheckedUpdateWithout${excludedFieldCapitalized}InputSchema]),
+  create: v.union([${model.name}CreateWithout${excludedFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${excludedFieldCapitalized}InputSchema]),
 }));
 
 `;
@@ -544,8 +544,8 @@ export function generateUpsertWithWhereUniqueWithoutInputSchemas(model: DMMF.Mod
       excludedField.name.charAt(0).toUpperCase() + excludedField.name.slice(1);
     output += `export const ${model.name}UpsertWithWhereUniqueWithout${excludedFieldCapitalized}InputSchema = v.lazy(() => v.object({
   where: ${model.name}WhereUniqueInputSchema,
-  update: v.union([v.lazy(() => ${model.name}UpdateWithout${excludedFieldCapitalized}InputSchema), v.lazy(() => ${model.name}UncheckedUpdateWithout${excludedFieldCapitalized}InputSchema)]),
-  create: v.union([v.lazy(() => ${model.name}CreateWithout${excludedFieldCapitalized}InputSchema), v.lazy(() => ${model.name}UncheckedCreateWithout${excludedFieldCapitalized}InputSchema)]),
+  update: v.union([${model.name}UpdateWithout${excludedFieldCapitalized}InputSchema, ${model.name}UncheckedUpdateWithout${excludedFieldCapitalized}InputSchema]),
+  create: v.union([${model.name}CreateWithout${excludedFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${excludedFieldCapitalized}InputSchema]),
 }));
 
 `;
@@ -569,7 +569,7 @@ export function generateUpdateWithWhereUniqueWithoutInputSchemas(model: DMMF.Mod
       excludedField.name.charAt(0).toUpperCase() + excludedField.name.slice(1);
     output += `export const ${model.name}UpdateWithWhereUniqueWithout${excludedFieldCapitalized}InputSchema = v.lazy(() => v.object({
   where: ${model.name}WhereUniqueInputSchema,
-  data: v.union([v.lazy(() => ${model.name}UpdateWithout${excludedFieldCapitalized}InputSchema), v.lazy(() => ${model.name}UncheckedUpdateWithout${excludedFieldCapitalized}InputSchema)]),
+  data: v.union([${model.name}UpdateWithout${excludedFieldCapitalized}InputSchema, ${model.name}UncheckedUpdateWithout${excludedFieldCapitalized}InputSchema]),
 }));
 
 `;
@@ -592,8 +592,8 @@ export function generateUpdateManyWithWhereWithoutInputSchemas(model: DMMF.Model
     const excludedFieldCapitalized =
       excludedField.name.charAt(0).toUpperCase() + excludedField.name.slice(1);
     output += `export const ${model.name}UpdateManyWithWhereWithout${excludedFieldCapitalized}InputSchema = v.lazy(() => v.object({
-  where: v.lazy(() => ${model.name}WhereInputSchema),
-  data: v.union([v.lazy(() => ${model.name}UpdateWithout${excludedFieldCapitalized}InputSchema), v.lazy(() => ${model.name}UncheckedUpdateWithout${excludedFieldCapitalized}InputSchema)]),
+  where: ${model.name}WhereInputSchema,
+  data: v.union([${model.name}UpdateWithout${excludedFieldCapitalized}InputSchema, ${model.name}UncheckedUpdateWithout${excludedFieldCapitalized}InputSchema]),
 }));
 
 `;
