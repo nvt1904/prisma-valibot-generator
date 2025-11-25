@@ -6,11 +6,18 @@ import {
   generateWhereInputSchema,
   generateScalarFilterSchemas,
   generateListRelationFilterSchema,
+  generateScalarWhereWithAggregatesInputSchema,
 } from '../builders/where-input';
 import { generateWhereUniqueInputSchema } from '../builders/where-unique';
 import {
   generateOrderBySchema,
   generateOrderByRelationAggregateSchema,
+  generateOrderByWithAggregationInputSchema,
+  generateCountOrderByAggregateInputSchema,
+  generateSumOrderByAggregateInputSchema,
+  generateAvgOrderByAggregateInputSchema,
+  generateMinOrderByAggregateInputSchema,
+  generateMaxOrderByAggregateInputSchema,
 } from '../builders/orderby-input';
 import { generateSelectSchema, generateIncludeSchema } from '../builders/select-include';
 import {
@@ -61,6 +68,16 @@ import {
   generateUpdateManyWithWhereWithoutInputSchemas,
 } from '../builders/update-args';
 import { generateDeleteArgsSchema, generateDeleteManyArgsSchema } from '../builders/delete-args';
+import {
+  generateCountAggregateInputSchema,
+  generateSumAggregateInputSchema,
+  generateAvgAggregateInputSchema,
+  generateMinAggregateInputSchema,
+  generateMaxAggregateInputSchema,
+} from '../builders/aggregate-schema';
+import { generateGroupByArgsSchema } from '../builders/groupby-args';
+import { generateAggregateArgsSchema } from '../builders/aggregate-args';
+import { generateValibotGroupByArgsGenericType } from '../builders/utils';
 
 /**
  * Main function to generate all Valibot schemas from Prisma DMMF
@@ -70,7 +87,7 @@ export function generateSchemas(dmmf: DMMF.Document): GeneratedFile {
 
   // Generate index file with all exports
   let indexContent = `import * as v from 'valibot';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 `;
 
@@ -224,7 +241,34 @@ import type { Prisma } from '@prisma/client';
     indexContent += generateUpsertArgsSchema(model);
     indexContent += generateDeleteArgsSchema(model);
     indexContent += generateDeleteManyArgsSchema(model);
+
+    // Aggregate orderBy schemas (needed before groupBy)
+    indexContent += generateCountOrderByAggregateInputSchema(model);
+    indexContent += generateSumOrderByAggregateInputSchema(model);
+    indexContent += generateAvgOrderByAggregateInputSchema(model);
+    indexContent += generateMinOrderByAggregateInputSchema(model);
+    indexContent += generateMaxOrderByAggregateInputSchema(model);
+    indexContent += generateOrderByWithAggregationInputSchema(model);
+
+    // Aggregate schemas
+    indexContent += generateCountAggregateInputSchema(model);
+    indexContent += generateSumAggregateInputSchema(model);
+    indexContent += generateAvgAggregateInputSchema(model);
+    indexContent += generateMinAggregateInputSchema(model);
+    indexContent += generateMaxAggregateInputSchema(model);
+
+    // ScalarWhereWithAggregates (for GroupBy having clause)
+    indexContent += generateScalarWhereWithAggregatesInputSchema(model);
+
+    // GroupBy args
+    indexContent += generateGroupByArgsSchema(model);
+
+    // Aggregate args
+    indexContent += generateAggregateArgsSchema(model);
   }
+
+  // Generate utils
+  indexContent += generateValibotGroupByArgsGenericType();
 
   files['index.ts'] = indexContent;
 

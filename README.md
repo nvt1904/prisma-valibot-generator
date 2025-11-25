@@ -26,9 +26,11 @@ The output mirrors Prisma's DMMF, allowing you to validate `find`, `create`, `up
 - **🚀 Complete CRUD Coverage**: Generates model schemas plus all Prisma args (`find`, `create`, `update`, `upsert`, `delete`, `many` operations, and relation inputs).
 - **🧠 Smart Type Alignment**:
   - `WhereInput` accepts both filter objects AND direct values (e.g., `name: "John"` or `name: { contains: "John" }`).
+  - Relation filters support Prisma's XOR pattern: wrapper objects with `is`/`isNot`, direct `WhereInput`, or `null` (for nullable relations).
   - `DateTime` fields accept both `Date` objects and ISO strings.
   - Nullable fields use `v.nullish()` to accept `null | undefined`.
   - Required relations in `CreateInput` are properly typed (no unnecessary `v.optional()`).
+  - `ScalarFieldEnum` uses array pattern (e.g., `['id', 'email'] as const`) consistent with regular enums.
 - **⚡ Intelligent Conditional Generation**:
   - Only generates filter schemas, aggregate inputs, and relation helpers when Prisma actually uses them.
   - Generates local type definitions for scalar filters (e.g., `StringFilter`, `IntFilter`) to ensure full type safety without relying on potentially missing Prisma exports.
@@ -157,6 +159,13 @@ For each model in your `schema.prisma` (e.g., `User`), the following schemas are
 | `UserUpsertArgsSchema` | Arguments for `upsert` |
 | `UserDeleteManyArgsSchema` | Arguments for `deleteMany` |
 | `UserUpdateManyArgsSchema` | Arguments for `updateMany` |
+| `UserGroupByArgsSchema` | Arguments for `groupBy` |
+| `UserAggregateArgsSchema` | Arguments for `aggregate` |
+| `UserCountAggregateInputSchema` | Count aggregation input |
+| `UserMinAggregateInputSchema` | Min aggregation input |
+| `UserMaxAggregateInputSchema` | Max aggregation input |
+| `UserAvgAggregateInputSchema` | Avg aggregation input |
+| `UserSumAggregateInputSchema` | Sum aggregation input |
 
 ## Type Mappings
 
@@ -209,6 +218,43 @@ where: {
   email: { contains: '@example' }, // Filter object
   age: { gte: 18 },                // Comparison
 }
+```
+
+### Relation Filters (XOR Pattern)
+
+Relation filters support Prisma's XOR pattern with three valid formats:
+
+```ts
+// 1. Wrapper object with is/isNot
+where: {
+  profile: { is: { bio: 'Hello' } },
+  profile: { isNot: { bio: null } },
+}
+
+// 2. Direct WhereInput (shorthand)
+where: {
+  profile: { bio: 'Hello' },
+}
+
+// 3. Null (for nullable relations only)
+where: {
+  profile: null,
+}
+```
+
+### ScalarFieldEnum Pattern
+
+ScalarFieldEnum follows the same array pattern as regular enums:
+
+```ts
+// Generated for each model
+export const UserScalarFieldEnum = ['id', 'email', 'name'] as const;
+
+// Used in GroupBy and other operations
+const result = await prisma.user.groupBy({
+  by: ['email'], // Type-safe field names
+  _count: true,
+});
 ```
 
 ### Required Relations

@@ -1,5 +1,5 @@
 import { DMMF } from '@prisma/generator-helper';
-import { getValibotType, wrapOptional } from '../utils/type-mapping';
+import { getValibotType } from '../utils/type-mapping';
 
 /**
  * Generates the base model schema for a Prisma model
@@ -14,7 +14,9 @@ export function generateModelSchema(model: DMMF.Model): string {
 
     let valibotType =
       field.kind === 'enum'
-        ? `v.picklist(${field.type}Enum)`
+        ? field.isList
+          ? `v.array(v.picklist(${field.type}Enum))`
+          : `v.picklist(${field.type}Enum)`
         : getValibotType(field.type, field.isList);
 
     // For nullable fields, use v.nullish() to accept both null and undefined
@@ -34,15 +36,14 @@ export type ${model.name} = v.InferOutput<typeof ${schemaName}>;
 }
 
 /**
- * Generates schemas for all scalar fields (used in select, etc.)
+ * Generates ScalarFieldEnum as an array (consistent with enum pattern)
+ * Used in GroupBy 'by' field and other places that need field name validation
  */
 export function generateScalarFieldEnum(model: DMMF.Model): string {
   const scalarFields = model.fields
     .filter((f) => f.kind !== 'object')
-    .map((f) => `  ${f.name}: true,`);
+    .map((f) => `'${f.name}'`);
 
-  return `export const ${model.name}ScalarFieldEnum = {
-${scalarFields.join('\n')}
-} as const;
+  return `export const ${model.name}ScalarFieldEnum = [${scalarFields.join(', ')}] as const;
 `;
 }

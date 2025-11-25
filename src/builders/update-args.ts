@@ -93,7 +93,9 @@ export function generateUpdateInputSchema(
       // Scalar/enum fields - all optional in update
       let valibotType =
         field.kind === 'enum'
-          ? `v.picklist(${field.type}Enum)`
+          ? field.isList
+            ? `v.array(v.picklist(${field.type}Enum))`
+            : `v.picklist(${field.type}Enum)`
           : getValibotType(field.type, field.isList);
 
       // Wrap with v.nullable() if field is nullable
@@ -127,7 +129,9 @@ export function generateUncheckedUpdateInputSchema(model: DMMF.Model): string {
     // Include all scalar/enum fields (including foreign keys)
     let valibotType =
       field.kind === 'enum'
-        ? `v.picklist(${field.type}Enum)`
+        ? field.isList
+          ? `v.array(v.picklist(${field.type}Enum))`
+          : `v.picklist(${field.type}Enum)`
         : getValibotType(field.type, field.isList);
 
     // Wrap with v.nullable() if field is nullable
@@ -250,7 +254,9 @@ export function generateUpdateManyMutationInputSchema(model: DMMF.Model): string
 
     const valibotType =
       field.kind === 'enum'
-        ? `v.picklist(${field.type}Enum)`
+        ? field.isList
+          ? `v.array(v.picklist(${field.type}Enum))`
+          : `v.picklist(${field.type}Enum)`
         : getValibotType(field.type, field.isList);
 
     fields.push(`  ${field.name}: v.optional(${valibotType}),`);
@@ -330,7 +336,9 @@ export function generateUpdateWithoutInputSchemas(
       // Scalar/enum fields - all optional in update
       let valibotType =
         field.kind === 'enum'
-          ? `v.picklist(${field.type}Enum)`
+          ? field.isList
+            ? `v.array(v.picklist(${field.type}Enum))`
+            : `v.picklist(${field.type}Enum)`
           : getValibotType(field.type, field.isList);
 
       if (!field.isRequired) {
@@ -382,7 +390,9 @@ export function generateUncheckedUpdateWithoutInputSchemas(model: DMMF.Model): s
       // Include all scalar/enum fields (including foreign keys)
       let valibotType =
         field.kind === 'enum'
-          ? `v.picklist(${field.type}Enum)`
+          ? field.isList
+            ? `v.array(v.picklist(${field.type}Enum))`
+            : `v.picklist(${field.type}Enum)`
           : getValibotType(field.type, field.isList);
 
       if (!field.isRequired) {

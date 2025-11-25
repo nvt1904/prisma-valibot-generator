@@ -5,6 +5,9 @@ import { PrismaScalarType } from '../types';
  * Maps Prisma scalar types to Valibot schema constructors
  */
 export function getValibotType(fieldType: string, isList: boolean = false): string {
+  if (fieldType === 'DateTime' && isList) {
+    return 'v.union([v.array(v.pipe(v.string(), v.isoTimestamp())), v.array(v.date())])';
+  }
   const baseType = getBaseValibotType(fieldType);
   return isList ? `v.array(${baseType})` : baseType;
 }
@@ -19,7 +22,7 @@ function getBaseValibotType(fieldType: string): string {
     Boolean: 'v.boolean()',
     DateTime: 'v.union([v.pipe(v.string(), v.isoTimestamp()), v.date()])',
     Json: 'v.any()',
-    Bytes: 'v.instance(Buffer)',
+    Bytes: 'v.instance(Uint8Array)',
   };
 
   return typeMap[fieldType as PrismaScalarType] || 'v.any()';

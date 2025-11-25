@@ -93,7 +93,9 @@ export function generateCreateInputSchema(
       // Scalar/enum fields
       let valibotType =
         field.kind === 'enum'
-          ? `v.picklist(${field.type}Enum)`
+          ? field.isList
+            ? `v.array(v.picklist(${field.type}Enum))`
+            : `v.picklist(${field.type}Enum)`
           : getValibotType(field.type, field.isList);
 
       // Wrap with v.nullable() if field is nullable (not required and no default)
@@ -141,7 +143,9 @@ export function generateUncheckedCreateInputSchema(
     // Scalar/enum fields (including foreign keys)
     let valibotType =
       field.kind === 'enum'
-        ? `v.picklist(${field.type}Enum)`
+        ? field.isList
+          ? `v.array(v.picklist(${field.type}Enum))`
+          : `v.picklist(${field.type}Enum)`
         : getValibotType(field.type, field.isList);
 
     // Wrap with v.nullable() if field is nullable (not required and no default)
@@ -328,7 +332,9 @@ export function generateCreateWithoutInputSchemas(
         // Scalar/enum fields
         let valibotType =
           field.kind === 'enum'
-            ? `v.picklist(${field.type}Enum)`
+            ? field.isList
+              ? `v.array(v.picklist(${field.type}Enum))`
+              : `v.picklist(${field.type}Enum)`
             : getValibotType(field.type, field.isList);
 
         if (!field.isRequired && !field.hasDefaultValue) {
@@ -394,7 +400,9 @@ export function generateUncheckedCreateWithoutInputSchemas(
       // Scalar/enum fields (including foreign keys)
       let valibotType =
         field.kind === 'enum'
-          ? `v.picklist(${field.type}Enum)`
+          ? field.isList
+            ? `v.array(v.picklist(${field.type}Enum))`
+            : `v.picklist(${field.type}Enum)`
           : getValibotType(field.type, field.isList);
 
       if (!field.isRequired && !field.hasDefaultValue) {
@@ -501,7 +509,9 @@ export function generateCreateManyWithoutInputSchemas(
 
           const valibotType =
             modelField.kind === 'enum'
-              ? `v.picklist(${modelField.type}Enum)`
+              ? modelField.isList
+                ? `v.array(v.picklist(${modelField.type}Enum))`
+                : `v.picklist(${modelField.type}Enum)`
               : getValibotType(modelField.type, modelField.isList);
 
           const wrappedType = wrapOptional(
@@ -610,7 +620,9 @@ export function generateCreateManyInputSchema(model: DMMF.Model): string {
 
     const valibotType =
       field.kind === 'enum'
-        ? `v.picklist(${field.type}Enum)`
+        ? field.isList
+          ? `v.array(v.picklist(${field.type}Enum))`
+          : `v.picklist(${field.type}Enum)`
         : getValibotType(field.type, field.isList);
 
     const wrappedType = wrapOptional(valibotType, field.isRequired && !field.hasDefaultValue);

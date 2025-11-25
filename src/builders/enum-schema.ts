@@ -59,6 +59,13 @@ export function generateEnumFilterSchema(
     )
   );
 
+  // Check if this enum is used as a list field in any model
+  const hasListUsage = models.some((model) =>
+    model.fields.some(
+      (field) => field.type === enumDef.name && field.kind === 'enum' && field.isList
+    )
+  );
+
   let result = '';
 
   // Only generate base filter if the enum is actually used as required field
@@ -87,6 +94,57 @@ export const ${enumDef.name}NullableFilterSchema: v.GenericSchema<Prisma.Enum${e
     not: v.optional(
       v.lazy(() => v.union([v.nullable(${enumDef.name}Schema), ${enumDef.name}NullableFilterSchema]))
     ),
+  })
+);
+`;
+  }
+
+  // Only generate list filter if the enum is actually used as a list field
+  if (hasListUsage) {
+    result += `
+export const ${enumDef.name}NullableListFilterSchema: v.GenericSchema<Prisma.Enum${enumDef.name}NullableListFilter> = v.object({
+  equals: v.optional(v.array(${enumDef.name}Schema)),
+  has: v.optional(${enumDef.name}Schema),
+  hasSome: v.optional(v.array(${enumDef.name}Schema)),
+  hasEvery: v.optional(v.array(${enumDef.name}Schema)),
+  isEmpty: v.optional(v.boolean()),
+});
+`;
+  }
+
+  // Generate WithAggregates filter if enum is used as required field (for GroupBy having clause)
+  if (hasRequiredUsage) {
+    result += `
+export const ${enumDef.name}WithAggregatesFilterSchema: v.GenericSchema<Prisma.Enum${enumDef.name}WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(${enumDef.name}Schema),
+    in: v.optional(v.array(${enumDef.name}Schema)),
+    notIn: v.optional(v.array(${enumDef.name}Schema)),
+    not: v.optional(
+      v.lazy(() => v.union([${enumDef.name}Schema, ${enumDef.name}WithAggregatesFilterSchema]))
+    ),
+    _count: v.optional(IntFilterSchema),
+    _min: v.optional(${enumDef.name}FilterSchema),
+    _max: v.optional(${enumDef.name}FilterSchema),
+  })
+);
+`;
+  }
+
+  // Generate NullableWithAggregates filter if enum is used as nullable field
+  if (hasNullableUsage) {
+    result += `
+export const ${enumDef.name}NullableWithAggregatesFilterSchema: v.GenericSchema<Prisma.Enum${enumDef.name}NullableWithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.nullable(${enumDef.name}Schema)),
+    in: v.optional(v.nullable(v.array(${enumDef.name}Schema))),
+    notIn: v.optional(v.nullable(v.array(${enumDef.name}Schema))),
+    not: v.optional(
+      v.lazy(() => v.union([v.nullable(${enumDef.name}Schema), ${enumDef.name}NullableWithAggregatesFilterSchema]))
+    ),
+    _count: v.optional(IntFilterSchema),
+    _min: v.optional(${enumDef.name}NullableFilterSchema),
+    _max: v.optional(${enumDef.name}NullableFilterSchema),
   })
 );
 `;

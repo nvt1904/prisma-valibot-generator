@@ -65,7 +65,7 @@ function getScalarType(type: string): string {
     Boolean: 'v.boolean()',
     DateTime: 'v.pipe(v.string(), v.isoTimestamp())',
     Json: 'v.any()',
-    Bytes: 'v.instance(Buffer)',
+    Bytes: 'v.instance(Uint8Array)',
   };
 
   return typeMap[type] || 'v.any()';

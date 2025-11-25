@@ -38,13 +38,39 @@ export function generateWhereInputSchema(model: DMMF.Model): string {
           `  ${field.name}: v.optional(v.lazy(() => ${field.type}ListRelationFilterSchema)),`
         );
       } else {
-        // Single relation - inline the filter (Prisma doesn't export separate type)
-        schemaFields.push(
-          `  ${field.name}: v.optional(v.lazy(() => v.object({`,
-          `    is: v.optional(v.lazy(() => ${field.type}WhereInputSchema)),`,
-          `    isNot: v.optional(v.lazy(() => ${field.type}WhereInputSchema)),`,
-          `  }))),`
-        );
+        // Single relation - supports XOR pattern: RelationFilter | WhereInput | null
+        // Prisma allows three valid formats for relation filters:
+        // 1. Wrapper object with is/isNot: { profile: { is: { bio: 'Hello' } } }
+        // 2. Direct WhereInput (shorthand): { profile: { bio: 'Hello' } }
+        // 3. null (nullable relations only): { profile: null }
+        //
+        // This matches Prisma's type definitions:
+        // - Nullable: XOR<ProfileNullableScalarRelationFilter, ProfileWhereInput> | null
+        // - Required: XOR<UserScalarRelationFilter, UserWhereInput>
+        if (field.isRequired) {
+          // Required relation: XOR<RelationFilter, WhereInput>
+          schemaFields.push(
+            `  ${field.name}: v.optional(v.lazy(() => v.union([`,
+            `    v.object({`,
+            `      is: v.optional(v.lazy(() => ${field.type}WhereInputSchema)),`,
+            `      isNot: v.optional(v.lazy(() => ${field.type}WhereInputSchema)),`,
+            `    }),`,
+            `    ${field.type}WhereInputSchema`,
+            `  ]))),`
+          );
+        } else {
+          // Nullable relation: XOR<NullableRelationFilter, WhereInput> | null
+          schemaFields.push(
+            `  ${field.name}: v.optional(v.lazy(() => v.union([`,
+            `    v.object({`,
+            `      is: v.optional(v.nullable(v.lazy(() => ${field.type}WhereInputSchema))),`,
+            `      isNot: v.optional(v.nullable(v.lazy(() => ${field.type}WhereInputSchema))),`,
+            `    }),`,
+            `    ${field.type}WhereInputSchema,`,
+            `    v.null()`,
+            `  ]))),`
+          );
+        }
       }
     }
   }
@@ -61,6 +87,9 @@ function normalizeSchemaName(name: string): string {
 
 function getFilterSchemaName(field: DMMF.Field): string {
   if (field.kind === 'enum') {
+    if (field.isList) {
+      return `${field.type}NullableListFilterSchema`;
+    }
     // Check if enum field is nullable
     if (!field.isRequired) {
       return `${field.type}NullableFilterSchema`;
@@ -116,7 +145,7 @@ function getDirectValueSchema(field: DMMF.Field): string {
     Boolean: 'v.boolean()',
     DateTime: 'v.union([v.pipe(v.string(), v.isoTimestamp()), v.date()])',
     Json: 'v.any()',
-    Bytes: 'v.instance(Buffer)',
+    Bytes: 'v.instance(Uint8Array)',
   };
 
   const baseSchema = typeMap[field.type] || 'v.any()';
@@ -310,13 +339,17 @@ type JsonNullableFilter = {
 };
 
 type BytesFilter = {
-  equals?: Buffer;
-  not?: Buffer | BytesFilter;
+  equals?: Uint8Array<ArrayBuffer>;
+  in?: Uint8Array<ArrayBuffer>[];
+  notIn?: Uint8Array<ArrayBuffer>[];
+  not?: Uint8Array<ArrayBuffer> | BytesFilter;
 };
 
 type BytesNullableFilter = {
-  equals?: Buffer | null;
-  not?: Buffer | null | BytesNullableFilter;
+  equals?: Uint8Array<ArrayBuffer> | null;
+  in?: Uint8Array<ArrayBuffer>[] | null;
+  notIn?: Uint8Array<ArrayBuffer>[] | null;
+  not?: Uint8Array<ArrayBuffer> | null | BytesNullableFilter;
 };
 
 type StringListFilter = {
@@ -368,10 +401,26 @@ type DateTimeListFilter = {
 };
 
 type BytesListFilter = {
-  equals?: Buffer[];
-  has?: Buffer;
-  hasSome?: Buffer[];
-  hasEvery?: Buffer[];
+  equals?: Uint8Array<ArrayBuffer>[];
+  has?: Uint8Array<ArrayBuffer>;
+  hasSome?: Uint8Array<ArrayBuffer>[];
+  hasEvery?: Uint8Array<ArrayBuffer>[];
+  isEmpty?: boolean;
+};
+
+type JsonListFilter = {
+  equals?: any[];
+  has?: any;
+  hasSome?: any[];
+  hasEvery?: any[];
+  isEmpty?: boolean;
+};
+
+type DecimalListFilter = {
+  equals?: number[];
+  has?: number;
+  hasSome?: number[];
+  hasEvery?: number[];
   isEmpty?: boolean;
 };
 
@@ -577,18 +626,22 @@ export const JsonNullableFilterSchema: v.GenericSchema<JsonNullableFilter> = v.l
 // Bytes filters
 export const BytesFilterSchema: v.GenericSchema<BytesFilter> = v.lazy(() =>
   v.object({
-    equals: v.optional(v.instance(Buffer)),
+    equals: v.optional(v.instance(Uint8Array)),
+    in: v.optional(v.array(v.instance(Uint8Array))),
+    notIn: v.optional(v.array(v.instance(Uint8Array))),
     not: v.optional(
-      v.lazy(() => v.union([v.instance(Buffer), BytesFilterSchema]))
+      v.lazy(() => v.union([v.instance(Uint8Array), BytesFilterSchema]))
     ),
   })
 );
 
 export const BytesNullableFilterSchema: v.GenericSchema<BytesNullableFilter> = v.lazy(() =>
   v.object({
-    equals: v.optional(v.nullable(v.instance(Buffer))),
+    equals: v.optional(v.nullable(v.instance(Uint8Array))),
+    in: v.optional(v.nullable(v.array(v.instance(Uint8Array)))),
+    notIn: v.optional(v.nullable(v.array(v.instance(Uint8Array)))),
     not: v.optional(
-      v.lazy(() => v.union([v.nullable(v.instance(Buffer)), BytesNullableFilterSchema]))
+      v.lazy(() => v.union([v.nullable(v.instance(Uint8Array)), BytesNullableFilterSchema]))
     ),
   })
 );
@@ -643,12 +696,282 @@ export const DateTimeListFilterSchema: v.GenericSchema<DateTimeListFilter> = v.o
 });
 
 export const BytesListFilterSchema: v.GenericSchema<BytesListFilter> = v.object({
-  equals: v.optional(v.array(v.instance(Buffer))),
-  has: v.optional(v.instance(Buffer)),
-  hasSome: v.optional(v.array(v.instance(Buffer))),
-  hasEvery: v.optional(v.array(v.instance(Buffer))),
+  equals: v.optional(v.array(v.instance(Uint8Array))),
+  has: v.optional(v.instance(Uint8Array)),
+  hasSome: v.optional(v.array(v.instance(Uint8Array))),
+  hasEvery: v.optional(v.array(v.instance(Uint8Array))),
   isEmpty: v.optional(v.boolean()),
-});`);
+});
+
+export const JsonListFilterSchema: v.GenericSchema<JsonListFilter> = v.object({
+  equals: v.optional(v.array(v.any())),
+  has: v.optional(v.any()),
+  hasSome: v.optional(v.array(v.any())),
+  hasEvery: v.optional(v.array(v.any())),
+  isEmpty: v.optional(v.boolean()),
+});
+
+export const DecimalListFilterSchema: v.GenericSchema<DecimalListFilter> = v.object({
+  equals: v.optional(v.array(v.number())),
+  has: v.optional(v.number()),
+  hasSome: v.optional(v.array(v.number())),
+  hasEvery: v.optional(v.array(v.number())),
+  isEmpty: v.optional(v.boolean()),
+});
+
+// ========== WithAggregates Filters ==========
+// Used in "having" clause of GroupBy queries
+// Reuses existing filter schemas for aggregate fields (_count, _min, _max, _sum, _avg)
+
+// Type definitions for WithAggregates filters (used for type annotations to avoid circular inference)
+type WithAggregatesFilter = Record<string, unknown>;
+
+export const StringWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.string()),
+    in: v.optional(v.array(v.string())),
+    notIn: v.optional(v.array(v.string())),
+    lt: v.optional(v.string()),
+    lte: v.optional(v.string()),
+    gt: v.optional(v.string()),
+    gte: v.optional(v.string()),
+    contains: v.optional(v.string()),
+    startsWith: v.optional(v.string()),
+    endsWith: v.optional(v.string()),
+    mode: v.optional(QueryModeSchema),
+    not: v.optional(v.lazy(() => v.union([v.string(), StringWithAggregatesFilterSchema]))),
+    _count: v.optional(IntFilterSchema),
+    _min: v.optional(StringFilterSchema),
+    _max: v.optional(StringFilterSchema),
+  })
+);
+
+export const StringNullableWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.nullable(v.string())),
+    in: v.optional(v.nullable(v.array(v.string()))),
+    notIn: v.optional(v.nullable(v.array(v.string()))),
+    lt: v.optional(v.string()),
+    lte: v.optional(v.string()),
+    gt: v.optional(v.string()),
+    gte: v.optional(v.string()),
+    contains: v.optional(v.string()),
+    startsWith: v.optional(v.string()),
+    endsWith: v.optional(v.string()),
+    mode: v.optional(QueryModeSchema),
+    not: v.optional(v.lazy(() => v.union([v.nullable(v.string()), StringNullableWithAggregatesFilterSchema]))),
+    _count: v.optional(IntFilterSchema),
+    _min: v.optional(StringNullableFilterSchema),
+    _max: v.optional(StringNullableFilterSchema),
+  })
+);
+
+export const IntWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.number()),
+    in: v.optional(v.array(v.number())),
+    notIn: v.optional(v.array(v.number())),
+    lt: v.optional(v.number()),
+    lte: v.optional(v.number()),
+    gt: v.optional(v.number()),
+    gte: v.optional(v.number()),
+    not: v.optional(v.lazy(() => v.union([v.number(), IntWithAggregatesFilterSchema]))),
+    _count: v.optional(IntFilterSchema),
+    _avg: v.optional(FloatFilterSchema),
+    _sum: v.optional(IntFilterSchema),
+    _min: v.optional(IntFilterSchema),
+    _max: v.optional(IntFilterSchema),
+  })
+);
+
+export const IntNullableWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.nullable(v.number())),
+    in: v.optional(v.nullable(v.array(v.number()))),
+    notIn: v.optional(v.nullable(v.array(v.number()))),
+    lt: v.optional(v.number()),
+    lte: v.optional(v.number()),
+    gt: v.optional(v.number()),
+    gte: v.optional(v.number()),
+    not: v.optional(v.lazy(() => v.union([v.nullable(v.number()), IntNullableWithAggregatesFilterSchema]))),
+    _count: v.optional(IntFilterSchema),
+    _avg: v.optional(FloatNullableFilterSchema),
+    _sum: v.optional(IntNullableFilterSchema),
+    _min: v.optional(IntNullableFilterSchema),
+    _max: v.optional(IntNullableFilterSchema),
+  })
+);
+
+export const FloatWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.number()),
+    in: v.optional(v.array(v.number())),
+    notIn: v.optional(v.array(v.number())),
+    lt: v.optional(v.number()),
+    lte: v.optional(v.number()),
+    gt: v.optional(v.number()),
+    gte: v.optional(v.number()),
+    not: v.optional(v.lazy(() => v.union([v.number(), FloatWithAggregatesFilterSchema]))),
+    _count: v.optional(IntFilterSchema),
+    _avg: v.optional(FloatFilterSchema),
+    _sum: v.optional(FloatFilterSchema),
+    _min: v.optional(FloatFilterSchema),
+    _max: v.optional(FloatFilterSchema),
+  })
+);
+
+export const FloatNullableWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.nullable(v.number())),
+    in: v.optional(v.nullable(v.array(v.number()))),
+    notIn: v.optional(v.nullable(v.array(v.number()))),
+    lt: v.optional(v.number()),
+    lte: v.optional(v.number()),
+    gt: v.optional(v.number()),
+    gte: v.optional(v.number()),
+    not: v.optional(v.lazy(() => v.union([v.nullable(v.number()), FloatNullableWithAggregatesFilterSchema]))),
+    _count: v.optional(IntFilterSchema),
+    _avg: v.optional(FloatNullableFilterSchema),
+    _sum: v.optional(FloatNullableFilterSchema),
+    _min: v.optional(FloatNullableFilterSchema),
+    _max: v.optional(FloatNullableFilterSchema),
+  })
+);
+
+export const DecimalWithAggregatesFilterSchema = FloatWithAggregatesFilterSchema;
+export const DecimalNullableWithAggregatesFilterSchema = FloatNullableWithAggregatesFilterSchema;
+
+export const BigIntWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.bigint()),
+    in: v.optional(v.array(v.bigint())),
+    notIn: v.optional(v.array(v.bigint())),
+    lt: v.optional(v.bigint()),
+    lte: v.optional(v.bigint()),
+    gt: v.optional(v.bigint()),
+    gte: v.optional(v.bigint()),
+    not: v.optional(v.lazy(() => v.union([v.bigint(), BigIntWithAggregatesFilterSchema]))),
+    _count: v.optional(IntFilterSchema),
+    _avg: v.optional(FloatFilterSchema),
+    _sum: v.optional(BigIntFilterSchema),
+    _min: v.optional(BigIntFilterSchema),
+    _max: v.optional(BigIntFilterSchema),
+  })
+);
+
+export const BigIntNullableWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.nullable(v.bigint())),
+    in: v.optional(v.nullable(v.array(v.bigint()))),
+    notIn: v.optional(v.nullable(v.array(v.bigint()))),
+    lt: v.optional(v.bigint()),
+    lte: v.optional(v.bigint()),
+    gt: v.optional(v.bigint()),
+    gte: v.optional(v.bigint()),
+    not: v.optional(v.lazy(() => v.union([v.nullable(v.bigint()), BigIntNullableWithAggregatesFilterSchema]))),
+    _count: v.optional(IntFilterSchema),
+    _avg: v.optional(FloatNullableFilterSchema),
+    _sum: v.optional(BigIntNullableFilterSchema),
+    _min: v.optional(BigIntNullableFilterSchema),
+    _max: v.optional(BigIntNullableFilterSchema),
+  })
+);
+
+export const BoolWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.boolean()),
+    not: v.optional(v.lazy(() => v.union([v.boolean(), BoolWithAggregatesFilterSchema]))),
+    _count: v.optional(IntFilterSchema),
+    _min: v.optional(BoolFilterSchema),
+    _max: v.optional(BoolFilterSchema),
+  })
+);
+
+export const BoolNullableWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.nullable(v.boolean())),
+    not: v.optional(v.lazy(() => v.union([v.nullable(v.boolean()), BoolNullableWithAggregatesFilterSchema]))),
+    _count: v.optional(IntFilterSchema),
+    _min: v.optional(BoolNullableFilterSchema),
+    _max: v.optional(BoolNullableFilterSchema),
+  })
+);
+
+export const DateTimeWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    in: v.optional(v.array(v.pipe(v.string(), v.isoTimestamp()))),
+    notIn: v.optional(v.array(v.pipe(v.string(), v.isoTimestamp()))),
+    lt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    lte: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    gt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    gte: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    not: v.optional(v.lazy(() => v.union([v.pipe(v.string(), v.isoTimestamp()), DateTimeWithAggregatesFilterSchema]))),
+    _count: v.optional(IntFilterSchema),
+    _min: v.optional(DateTimeFilterSchema),
+    _max: v.optional(DateTimeFilterSchema),
+  })
+);
+
+export const DateTimeNullableWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.nullable(v.pipe(v.string(), v.isoTimestamp()))),
+    in: v.optional(v.nullable(v.array(v.pipe(v.string(), v.isoTimestamp())))),
+    notIn: v.optional(v.nullable(v.array(v.pipe(v.string(), v.isoTimestamp())))),
+    lt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    lte: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    gt: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    gte: v.optional(v.pipe(v.string(), v.isoTimestamp())),
+    not: v.optional(v.lazy(() => v.union([v.nullable(v.pipe(v.string(), v.isoTimestamp())), DateTimeNullableWithAggregatesFilterSchema]))),
+    _count: v.optional(IntFilterSchema),
+    _min: v.optional(DateTimeNullableFilterSchema),
+    _max: v.optional(DateTimeNullableFilterSchema),
+  })
+);
+
+export const BytesWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.instance(Uint8Array)),
+    in: v.optional(v.array(v.instance(Uint8Array))),
+    notIn: v.optional(v.array(v.instance(Uint8Array))),
+    not: v.optional(v.lazy(() => v.union([v.instance(Uint8Array), BytesWithAggregatesFilterSchema]))),
+    _count: v.optional(IntFilterSchema),
+    _min: v.optional(BytesFilterSchema),
+    _max: v.optional(BytesFilterSchema),
+  })
+);
+
+export const BytesNullableWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.nullable(v.instance(Uint8Array))),
+    in: v.optional(v.nullable(v.array(v.instance(Uint8Array)))),
+    notIn: v.optional(v.nullable(v.array(v.instance(Uint8Array)))),
+    not: v.optional(v.lazy(() => v.union([v.nullable(v.instance(Uint8Array)), BytesNullableWithAggregatesFilterSchema]))),
+    _count: v.optional(IntFilterSchema),
+    _min: v.optional(BytesNullableFilterSchema),
+    _max: v.optional(BytesNullableFilterSchema),
+  })
+);
+
+export const JsonWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.any()),
+    not: v.optional(v.any()),
+    _count: v.optional(IntFilterSchema),
+    _min: v.optional(JsonFilterSchema),
+    _max: v.optional(JsonFilterSchema),
+  })
+);
+
+export const JsonNullableWithAggregatesFilterSchema: v.GenericSchema<WithAggregatesFilter> = v.lazy(() =>
+  v.object({
+    equals: v.optional(v.nullable(v.any())),
+    not: v.optional(v.nullable(v.any())),
+    _count: v.optional(IntFilterSchema),
+    _min: v.optional(JsonNullableFilterSchema),
+    _max: v.optional(JsonNullableFilterSchema),
+  })
+);`);
   }
 
   return parts.join('\\n');
@@ -663,5 +986,95 @@ export function generateListRelationFilterSchema(model: DMMF.Model): string {
   some: v.optional(v.lazy(() => ${model.name}WhereInputSchema)),
   none: v.optional(v.lazy(() => ${model.name}WhereInputSchema)),
 });
+`;
+}
+
+/**
+ * Gets the WithAggregates filter schema name for a field
+ */
+function getWithAggregatesFilterSchemaName(field: DMMF.Field): string {
+  if (field.kind === 'enum') {
+    if (!field.isRequired) {
+      return `${field.type}NullableWithAggregatesFilterSchema`;
+    }
+    return `${field.type}WithAggregatesFilterSchema`;
+  }
+
+  const typeFilterMap: Record<string, string> = {
+    String: 'StringWithAggregatesFilterSchema',
+    Int: 'IntWithAggregatesFilterSchema',
+    BigInt: 'BigIntWithAggregatesFilterSchema',
+    Float: 'FloatWithAggregatesFilterSchema',
+    Decimal: 'DecimalWithAggregatesFilterSchema',
+    Boolean: 'BoolWithAggregatesFilterSchema',
+    DateTime: 'DateTimeWithAggregatesFilterSchema',
+    Json: 'JsonWithAggregatesFilterSchema',
+    Bytes: 'BytesWithAggregatesFilterSchema',
+  };
+
+  const filterName = typeFilterMap[field.type] || 'StringWithAggregatesFilterSchema';
+
+  if (!field.isRequired) {
+    return filterName.replace('WithAggregatesFilterSchema', 'NullableWithAggregatesFilterSchema');
+  }
+
+  return filterName;
+}
+
+/**
+ * Gets the direct value schema for WithAggregates fields
+ */
+function getWithAggregatesDirectValueSchema(field: DMMF.Field): string {
+  if (field.kind === 'enum') {
+    const enumSchema = `v.picklist(${field.type}Enum)`;
+    return field.isRequired ? enumSchema : `v.nullable(${enumSchema})`;
+  }
+
+  const typeMap: Record<string, string> = {
+    String: 'v.string()',
+    Int: 'v.number()',
+    BigInt: 'v.bigint()',
+    Float: 'v.number()',
+    Decimal: 'v.number()',
+    Boolean: 'v.boolean()',
+    DateTime: 'v.union([v.pipe(v.string(), v.isoTimestamp()), v.date()])',
+    Json: 'v.any()',
+    Bytes: 'v.instance(Uint8Array)',
+  };
+
+  const baseSchema = typeMap[field.type] || 'v.any()';
+  return field.isRequired ? baseSchema : `v.nullish(${baseSchema})`;
+}
+
+/**
+ * Generates ScalarWhereWithAggregatesInput schema for the "having" clause in GroupBy queries
+ */
+export function generateScalarWhereWithAggregatesInputSchema(model: DMMF.Model): string {
+  const schemaName = `${model.name}ScalarWhereWithAggregatesInputSchema`;
+  const schemaFields: string[] = [];
+
+  // Add logical operators
+  schemaFields.push(
+    `  AND: v.optional(v.lazy(() => v.union([${schemaName}, v.array(${schemaName})]))),`
+  );
+  schemaFields.push(`  OR: v.optional(v.lazy(() => v.array(${schemaName}))),`);
+  schemaFields.push(
+    `  NOT: v.optional(v.lazy(() => v.union([${schemaName}, v.array(${schemaName})]))),`
+  );
+
+  // Only include scalar and enum fields (no relations, no list fields)
+  for (const field of model.fields) {
+    if ((field.kind === 'scalar' || field.kind === 'enum') && !field.isList) {
+      const filterSchemaName = getWithAggregatesFilterSchemaName(field);
+      const directValue = getWithAggregatesDirectValueSchema(field);
+      schemaFields.push(
+        `  ${field.name}: v.optional(v.lazy(() => v.union([${filterSchemaName}, ${directValue}]))),`
+      );
+    }
+  }
+
+  return `export const ${schemaName}: v.GenericSchema<Prisma.${model.name}ScalarWhereWithAggregatesInput> = v.lazy(() => v.object({
+${schemaFields.join('\n')}
+}));
 `;
 }
