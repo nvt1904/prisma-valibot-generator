@@ -36,11 +36,11 @@ export function generateGroupByArgsSchema(model: DMMF.Model): string {
   return `export const ${schemaName} = v.lazy(() => v.union([
   v.object({
   ${byField},${optionalFields},
-  orderBy: v.optional(v.union([${model.name}OrderByWithAggregationInputSchema, v.array(${model.name}OrderByWithAggregationInputSchema)])),
+  orderBy: v.optional(v.union([v.array(${model.name}OrderByWithAggregationInputSchema), ${model.name}OrderByWithAggregationInputSchema])),
   }),
   v.object({
   ${byField},${optionalFields},
-  orderBy: v.union([${model.name}OrderByWithAggregationInputSchema, v.array(${model.name}OrderByWithAggregationInputSchema)]),
+  orderBy: v.union([v.array(${model.name}OrderByWithAggregationInputSchema), ${model.name}OrderByWithAggregationInputSchema]),
   take: v.optional(v.number()),
   skip: v.optional(v.number()),
   }),

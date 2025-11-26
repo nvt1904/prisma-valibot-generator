@@ -168,9 +168,9 @@ ${fields.join('\n')}
  */
 export function generateUncheckedCreateNestedManyInputSchema(model: DMMF.Model): string {
   return `export const ${model.name}UncheckedCreateNestedManyInputSchema = v.lazy(() => v.object({
-  create: v.optional(v.union([${model.name}UncheckedCreateInputSchema, v.array(${model.name}UncheckedCreateInputSchema)])),
-  connectOrCreate: v.optional(v.union([${model.name}CreateOrConnectInputSchema, v.array(${model.name}CreateOrConnectInputSchema)])),
-  connect: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
+  create: v.optional(v.union([v.array(${model.name}UncheckedCreateInputSchema), ${model.name}UncheckedCreateInputSchema])),
+  connectOrCreate: v.optional(v.union([v.array(${model.name}CreateOrConnectInputSchema), ${model.name}CreateOrConnectInputSchema])),
+  connect: v.optional(v.union([v.array(${model.name}WhereUniqueInputSchema), ${model.name}WhereUniqueInputSchema])),
 }));
 `;
 }
@@ -180,9 +180,9 @@ export function generateUncheckedCreateNestedManyInputSchema(model: DMMF.Model):
  */
 export function generateCreateNestedManyInputSchema(model: DMMF.Model): string {
   return `export const ${model.name}CreateNestedManyInputSchema = v.lazy(() => v.object({
-  create: v.optional(v.union([${model.name}CreateInputSchema, v.array(${model.name}CreateInputSchema)])),
-  connectOrCreate: v.optional(v.union([${model.name}CreateOrConnectInputSchema, v.array(${model.name}CreateOrConnectInputSchema)])),
-  connect: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
+  create: v.optional(v.union([v.array(${model.name}CreateInputSchema), ${model.name}CreateInputSchema])),
+  connectOrCreate: v.optional(v.union([v.array(${model.name}CreateOrConnectInputSchema), ${model.name}CreateOrConnectInputSchema])),
+  connect: v.optional(v.union([v.array(${model.name}WhereUniqueInputSchema), ${model.name}WhereUniqueInputSchema])),
 }));
 `;
 }
@@ -268,10 +268,10 @@ export function generateCreateNestedManyWithoutInputSchemas(
           reverseFieldName.charAt(0).toUpperCase() + reverseFieldName.slice(1);
 
         output += `export const ${model.name}CreateNestedManyWithout${reverseFieldCapitalized}InputSchema = v.lazy(() => v.object({
-  create: v.optional(v.union([${model.name}CreateWithout${reverseFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema, v.array(${model.name}CreateWithout${reverseFieldCapitalized}InputSchema), v.array(${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema)])),
-  connectOrCreate: v.optional(v.union([${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema, v.array(${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema)])),
+  create: v.optional(v.union([v.array(${model.name}CreateWithout${reverseFieldCapitalized}InputSchema), v.array(${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema), ${model.name}CreateWithout${reverseFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema])),
+  connectOrCreate: v.optional(v.union([v.array(${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema), ${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema])),
   createMany: v.optional(${model.name}CreateMany${reverseFieldCapitalized}InputEnvelopeSchema),
-  connect: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
+  connect: v.optional(v.union([v.array(${model.name}WhereUniqueInputSchema), ${model.name}WhereUniqueInputSchema])),
 }));
 
 `;
@@ -475,7 +475,7 @@ export function generateCreateManyInputEnvelopeSchemas(
           reverseFieldName.charAt(0).toUpperCase() + reverseFieldName.slice(1);
 
         output += `export const ${model.name}CreateMany${reverseFieldCapitalized}InputEnvelopeSchema = v.lazy(() => v.object({
-  data: v.union([${model.name}CreateMany${reverseFieldCapitalized}InputSchema, v.array(${model.name}CreateMany${reverseFieldCapitalized}InputSchema)]),
+  data: v.union([v.array(${model.name}CreateMany${reverseFieldCapitalized}InputSchema), ${model.name}CreateMany${reverseFieldCapitalized}InputSchema]),
   skipDuplicates: v.optional(v.boolean()),
 }));
 
@@ -569,10 +569,10 @@ export function generateUncheckedCreateNestedManyWithoutInputSchemas(
           reverseFieldName.charAt(0).toUpperCase() + reverseFieldName.slice(1);
 
         output += `export const ${model.name}UncheckedCreateNestedManyWithout${reverseFieldCapitalized}InputSchema = v.lazy(() => v.object({
-  create: v.optional(v.union([${model.name}CreateWithout${reverseFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema, v.array(${model.name}CreateWithout${reverseFieldCapitalized}InputSchema), v.array(${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema)])),
-  connectOrCreate: v.optional(v.union([${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema, v.array(${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema)])),
+  create: v.optional(v.union([v.array(${model.name}CreateWithout${reverseFieldCapitalized}InputSchema), v.array(${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema), ${model.name}CreateWithout${reverseFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema])),
+  connectOrCreate: v.optional(v.union([v.array(${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema), ${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema])),
   createMany: v.optional(${model.name}CreateMany${reverseFieldCapitalized}InputEnvelopeSchema),
-  connect: v.optional(v.union([${model.name}WhereUniqueInputSchema, v.array(${model.name}WhereUniqueInputSchema)])),
+  connect: v.optional(v.union([v.array(${model.name}WhereUniqueInputSchema), ${model.name}WhereUniqueInputSchema])),
 }));
 
 `;
@@ -601,7 +601,7 @@ export function generateCreateManyArgsSchema(model: DMMF.Model): string {
   const schemaName = `${model.name}CreateManyArgsSchema`;
 
   return `export const ${schemaName}: v.GenericSchema<Prisma.${model.name}CreateManyArgs> = v.object({
-  data: v.union([${model.name}CreateManyInputSchema, v.array(${model.name}CreateManyInputSchema)]),
+  data: v.union([v.array(${model.name}CreateManyInputSchema), ${model.name}CreateManyInputSchema]),
   skipDuplicates: v.optional(v.boolean()),
 });
 `;

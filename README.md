@@ -35,7 +35,8 @@ Generates comprehensive validation schemas for all Prisma operations:
 ### 🧠 Smart Type Alignment
 Perfect parity with Prisma's type system:
 - **Flexible WhereInput**: Accepts both filter objects (`{ contains: "John" }`) AND direct values (`"John"`)
-- **XOR Relation Filters**: Supports wrapper objects with `is`/`isNot`, direct `WhereInput`, or `null` (for nullable relations)
+- **XOR Relation Filters**: Supports wrapper objects with `is`/`isNot`, direct `WhereInput`, or `null` (for nullable relations) with proper union ordering
+- **Array/Object Union Handling**: Correctly validates both array and single object inputs for `AND`, `OR`, `NOT`, `orderBy`, and relation operations
 - **DateTime Handling**: Accepts both `Date` objects and ISO timestamp strings
 - **Nullable Fields**: Uses `v.nullish()` for model schemas, `v.nullable()` for input schemas
 - **Required Relations**: Correctly typed without unnecessary `v.optional()` wrappers
@@ -322,6 +323,7 @@ Relation filters support Prisma's XOR pattern with three valid formats:
 where: {
   profile: { is: { bio: 'Hello' } },        // Match condition
   profile: { isNot: { bio: null } },        // Negation
+  store: { is: { status: 'ACTIVE' } },      // Works correctly!
 }
 
 // 2. Direct WhereInput (shorthand)
@@ -336,7 +338,47 @@ where: {
 }
 ```
 
-**Note**: The WhereInputSchema is placed FIRST in the union to ensure properties like `OR`, `AND`, `NOT` work correctly in the shorthand format.
+**Implementation Details**:
+- Uses `v.strictObject()` for the `is`/`isNot` wrapper to ensure it only matches when these keys are present
+- Places `v.null()` first for nullable relations (fast-fail on null check)
+- Direct `WhereInputSchema` comes last as the fallback for shorthand syntax
+- This ordering ensures both wrapper and shorthand formats work correctly
+
+### Logical Operators (AND/OR/NOT)
+
+These operators accept both arrays and single objects:
+
+```ts
+where: {
+  // Array syntax (multiple conditions)
+  AND: [
+    { status: 'ACTIVE' },
+    { store: { is: { status: 'ACTIVE' } } },
+    {
+      OR: [
+        { category: { slug: 'electronics' } },
+        { category: { parent: { slug: 'electronics' } } }
+      ]
+    }
+  ],
+
+  // Object syntax (single condition)
+  AND: { status: 'ACTIVE' },
+
+  // Deeply nested combinations work!
+  OR: [
+    { name: 'A' },
+    {
+      AND: [
+        { price: { gte: 100 } },
+        { stock: { gt: 0 } }
+      ]
+    }
+  ]
+}
+```
+
+**Implementation**: Array schemas are placed **first** in unions (`v.union([v.array(...), object])`) to ensure arrays are correctly validated before attempting object matching.
 
 ### ScalarFieldEnum Pattern
 
@@ -603,6 +645,65 @@ const UserRegistrationWithPasswordSchema = v.object({
   confirmPassword: v.pipe(v.string(), v.minLength(8)),
 });
 ```
+
+## Technical Implementation Notes
+
+### Union Ordering for Correct Validation
+
+This generator carefully orders union types to ensure Valibot validates inputs correctly:
+
+#### Arrays vs Objects (AND/OR/NOT, orderBy, etc.)
+```typescript
+// ✅ CORRECT - Array schema first
+v.union([v.array(Schema), Schema])
+
+// ❌ WRONG - Would return {} for array inputs
+v.union([Schema, v.array(Schema)])
+```
+
+When an array `[{...}, {...}]` is passed to a union with the object schema first, Valibot's lazy evaluation can cause it to partially match the object schema and return an empty object instead of properly failing and trying the array schema.
+
+**Affected fields**:
+- `AND`, `OR`, `NOT` in where clauses
+- `orderBy` in queries and aggregations
+- `distinct` in queries
+- Relation operation arrays (create, connect, update, etc.)
+- `data` in CreateMany operations
+
+#### Relation Filters (is/isNot vs Direct)
+```typescript
+// ✅ CORRECT - For nullable relations
+v.union([
+  v.null(),                           // 1. Fast-fail on null
+  v.strictObject({                    // 2. Match wrapper {is/isNot}
+    is: v.optional(...),
+    isNot: v.optional(...)
+  }),
+  WhereInputSchema                    // 3. Fallback to shorthand
+])
+
+// ✅ CORRECT - For required relations
+v.union([
+  v.strictObject({                    // 1. Match wrapper {is/isNot}
+    is: v.optional(...),
+    isNot: v.optional(...)
+  }),
+  WhereInputSchema                    // 2. Fallback to shorthand
+])
+```
+
+Using `v.strictObject()` ensures the wrapper only matches when `is` or `isNot` keys are actually present. This allows both patterns to work:
+- Wrapper: `{ is: { field: value } }`
+- Direct: `{ field: value }`
+
+### Performance Considerations
+
+The generator optimizes for both validation performance and bundle size:
+
+1. **Minimal lazy wrapping**: Only uses `v.lazy()` where circular references require it
+2. **Union order optimization**: Places most common cases first (e.g., null before complex objects)
+3. **Strict object matching**: Uses `v.strictObject()` only where needed to distinguish between similar object shapes
+4. **Conditional generation**: Only generates schemas that are actually used in your Prisma schema
 
 ## Contributing / Scripts
 

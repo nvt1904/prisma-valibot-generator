@@ -11,11 +11,11 @@ export function generateFindManyArgsSchema(model: DMMF.Model): string {
   select: v.optional(${model.name}SelectSchema),
   include: v.optional(${model.name}IncludeSchema),
   where: v.optional(${model.name}WhereInputSchema),
-  orderBy: v.optional(v.union([${model.name}OrderByInputSchema, v.array(${model.name}OrderByInputSchema)])),
+  orderBy: v.optional(v.union([v.array(${model.name}OrderByInputSchema), ${model.name}OrderByInputSchema])),
   cursor: v.optional(${model.name}WhereUniqueInputSchema),
   take: v.optional(v.number()),
   skip: v.optional(v.number()),
-  distinct: v.optional(v.union([v.picklist([${scalarFields.join(', ')}]), v.array(v.picklist([${scalarFields.join(', ')}]))])),
+  distinct: v.optional(v.union([v.array(v.picklist([${scalarFields.join(', ')}])), v.picklist([${scalarFields.join(', ')}])])),
 }));
 `;
 }
@@ -31,11 +31,11 @@ export function generateFindFirstArgsSchema(model: DMMF.Model): string {
   select: v.optional(${model.name}SelectSchema),
   include: v.optional(${model.name}IncludeSchema),
   where: v.optional(${model.name}WhereInputSchema),
-  orderBy: v.optional(v.union([${model.name}OrderByInputSchema, v.array(${model.name}OrderByInputSchema)])),
+  orderBy: v.optional(v.union([v.array(${model.name}OrderByInputSchema), ${model.name}OrderByInputSchema])),
   cursor: v.optional(${model.name}WhereUniqueInputSchema),
   take: v.optional(v.number()),
   skip: v.optional(v.number()),
-  distinct: v.optional(v.union([v.picklist([${scalarFields.join(', ')}]), v.array(v.picklist([${scalarFields.join(', ')}]))])),
+  distinct: v.optional(v.union([v.array(v.picklist([${scalarFields.join(', ')}])), v.picklist([${scalarFields.join(', ')}])])),
 }));
 `;
 }

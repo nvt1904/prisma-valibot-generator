@@ -8,7 +8,7 @@ export function generateAggregateArgsSchema(model: DMMF.Model): string {
 
   return `export const ${schemaName} = v.object({
   where: v.optional(${model.name}WhereInputSchema),
-  orderBy: v.optional(v.union([${model.name}OrderByInputSchema, v.array(${model.name}OrderByInputSchema)])),
+  orderBy: v.optional(v.union([v.array(${model.name}OrderByInputSchema), ${model.name}OrderByInputSchema])),
   cursor: v.optional(${model.name}WhereUniqueInputSchema),
   take: v.optional(v.number()),
   skip: v.optional(v.number()),

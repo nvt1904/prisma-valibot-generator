@@ -8,12 +8,14 @@ export function generateWhereInputSchema(model: DMMF.Model): string {
   const schemaFields: string[] = [];
 
   // Add logical operators to schema
+  // IMPORTANT: In unions, array schema must come FIRST to properly validate array inputs
+  // Otherwise, Valibot's union will try the object schema first and return empty object {}
   schemaFields.push(
-    `  AND: v.optional(v.lazy(() => v.union([${schemaName}, v.array(${schemaName})]))),`
+    `  AND: v.optional(v.lazy(() => v.union([v.array(${schemaName}), ${schemaName}]))),`
   );
   schemaFields.push(`  OR: v.optional(v.lazy(() => v.array(${schemaName}))),`);
   schemaFields.push(
-    `  NOT: v.optional(v.lazy(() => v.union([${schemaName}, v.array(${schemaName})]))),`
+    `  NOT: v.optional(v.lazy(() => v.union([v.array(${schemaName}), ${schemaName}]))),`
   );
 
   for (const field of model.fields) {
@@ -48,30 +50,34 @@ export function generateWhereInputSchema(model: DMMF.Model): string {
         // - Nullable: XOR<ProfileNullableScalarRelationFilter, ProfileWhereInput> | null
         // - Required: XOR<UserScalarRelationFilter, UserWhereInput>
         //
-        // IMPORTANT: WhereInputSchema must come BEFORE the wrapper object in the union.
-        // Otherwise, the wrapper object (with optional is/isNot) will match first and
-        // strip out properties like OR/AND/NOT from direct WhereInput usage.
+        // IMPORTANT: Union order matters for proper validation:
+        // 1. v.null() - Check for null first (nullable relations only)
+        // 2. Wrapper object with is/isNot - Must use v.strictObject() to only match if is/isNot present
+        // 3. WhereInputSchema - Direct shorthand, matches any object with model fields
+        //
+        // Using v.strictObject() ensures the wrapper only matches when is/isNot keys are present.
+        // This allows both { is: {...} } and { field: value } patterns to work correctly.
         if (field.isRequired) {
           // Required relation: XOR<RelationFilter, WhereInput>
           schemaFields.push(
             `  ${field.name}: v.optional(v.lazy(() => v.union([`,
-            `    ${field.type}WhereInputSchema,`,
-            `    v.object({`,
+            `    v.strictObject({`,
             `      is: v.optional(${field.type}WhereInputSchema),`,
             `      isNot: v.optional(${field.type}WhereInputSchema),`,
-            `    })`,
+            `    }),`,
+            `    ${field.type}WhereInputSchema`,
             `  ]))),`
           );
         } else {
           // Nullable relation: XOR<NullableRelationFilter, WhereInput> | null
           schemaFields.push(
             `  ${field.name}: v.optional(v.lazy(() => v.union([`,
-            `    ${field.type}WhereInputSchema,`,
-            `    v.object({`,
+            `    v.null(),`,
+            `    v.strictObject({`,
             `      is: v.optional(v.nullable(${field.type}WhereInputSchema)),`,
             `      isNot: v.optional(v.nullable(${field.type}WhereInputSchema)),`,
             `    }),`,
-            `    v.null()`,
+            `    ${field.type}WhereInputSchema`,
             `  ]))),`
           );
         }
@@ -1058,12 +1064,13 @@ export function generateScalarWhereWithAggregatesInputSchema(model: DMMF.Model):
   const schemaFields: string[] = [];
 
   // Add logical operators
+  // IMPORTANT: In unions, array schema must come FIRST to properly validate array inputs
   schemaFields.push(
-    `  AND: v.optional(v.lazy(() => v.union([${schemaName}, v.array(${schemaName})]))),`
+    `  AND: v.optional(v.lazy(() => v.union([v.array(${schemaName}), ${schemaName}]))),`
   );
   schemaFields.push(`  OR: v.optional(v.lazy(() => v.array(${schemaName}))),`);
   schemaFields.push(
-    `  NOT: v.optional(v.lazy(() => v.union([${schemaName}, v.array(${schemaName})]))),`
+    `  NOT: v.optional(v.lazy(() => v.union([v.array(${schemaName}), ${schemaName}]))),`
   );
 
   // Only include scalar and enum fields (no relations, no list fields)
