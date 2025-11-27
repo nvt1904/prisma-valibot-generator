@@ -103,7 +103,9 @@ export function generateCreateInputSchema(
         valibotType = `v.nullable(${valibotType})`;
       }
 
-      const wrappedType = wrapOptional(valibotType, field.isRequired && !field.hasDefaultValue);
+      // Fields with @updatedAt are managed by Prisma and should be optional
+      const hasAutoDefault = field.hasDefaultValue || field.isUpdatedAt;
+      const wrappedType = wrapOptional(valibotType, field.isRequired && !hasAutoDefault);
       fields.push(`  ${field.name}: ${wrappedType},`);
     }
   }
@@ -153,7 +155,9 @@ export function generateUncheckedCreateInputSchema(
       valibotType = `v.nullable(${valibotType})`;
     }
 
-    const wrappedType = wrapOptional(valibotType, field.isRequired && !field.hasDefaultValue);
+    // Fields with @updatedAt are managed by Prisma and should be optional
+    const hasAutoDefault = field.hasDefaultValue || field.isUpdatedAt;
+    const wrappedType = wrapOptional(valibotType, field.isRequired && !hasAutoDefault);
     fields.push(`  ${field.name}: ${wrappedType},`);
   }
 
@@ -226,7 +230,7 @@ export function generateCreateNestedOneWithoutInputSchemas(
         const reverseFieldCapitalized =
           reverseFieldName.charAt(0).toUpperCase() + reverseFieldName.slice(1);
 
-        output += `export const ${model.name}CreateNestedOneWithout${reverseFieldCapitalized}InputSchema = v.lazy(() => v.object({
+        output += `export const ${model.name}CreateNestedOneWithout${reverseFieldCapitalized}InputSchema: v.GenericSchema<Prisma.${model.name}CreateNestedOneWithout${reverseFieldCapitalized}Input> = v.lazy(() => v.object({
   create: v.optional(v.union([${model.name}CreateWithout${reverseFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema])),
   connectOrCreate: v.optional(${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema),
   connect: v.optional(${model.name}WhereUniqueInputSchema),
@@ -267,7 +271,7 @@ export function generateCreateNestedManyWithoutInputSchemas(
         const reverseFieldCapitalized =
           reverseFieldName.charAt(0).toUpperCase() + reverseFieldName.slice(1);
 
-        output += `export const ${model.name}CreateNestedManyWithout${reverseFieldCapitalized}InputSchema = v.lazy(() => v.object({
+        output += `export const ${model.name}CreateNestedManyWithout${reverseFieldCapitalized}InputSchema: v.GenericSchema<Prisma.${model.name}CreateNestedManyWithout${reverseFieldCapitalized}Input> = v.lazy(() => v.object({
   create: v.optional(v.union([v.array(${model.name}CreateWithout${reverseFieldCapitalized}InputSchema), v.array(${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema), ${model.name}CreateWithout${reverseFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema])),
   connectOrCreate: v.optional(v.union([v.array(${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema), ${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema])),
   createMany: v.optional(${model.name}CreateMany${reverseFieldCapitalized}InputEnvelopeSchema),
@@ -341,7 +345,9 @@ export function generateCreateWithoutInputSchemas(
           valibotType = `v.nullable(${valibotType})`;
         }
 
-        const wrappedType = wrapOptional(valibotType, field.isRequired && !field.hasDefaultValue);
+        // Fields with @updatedAt are managed by Prisma and should be optional
+        const hasAutoDefault = field.hasDefaultValue || field.isUpdatedAt;
+        const wrappedType = wrapOptional(valibotType, field.isRequired && !hasAutoDefault);
         fields.push(`  ${field.name}: ${wrappedType},`);
       }
     }
@@ -383,6 +389,11 @@ export function generateUncheckedCreateWithoutInputSchemas(
       // Skip the excluded relation field
       if (field.name === excludedField.name) continue;
 
+      // Skip foreign key fields for the excluded relation
+      if (excludedField.relationFromFields?.includes(field.name)) {
+        continue;
+      }
+
       if (field.kind === 'object') {
         // Only include list relations in unchecked mode
         if (field.isList) {
@@ -409,7 +420,9 @@ export function generateUncheckedCreateWithoutInputSchemas(
         valibotType = `v.nullable(${valibotType})`;
       }
 
-      const wrappedType = wrapOptional(valibotType, field.isRequired && !field.hasDefaultValue);
+      // Fields with @updatedAt are managed by Prisma and should be optional
+      const hasAutoDefault = field.hasDefaultValue || field.isUpdatedAt;
+      const wrappedType = wrapOptional(valibotType, field.isRequired && !hasAutoDefault);
       fields.push(`  ${field.name}: ${wrappedType},`);
     }
 
@@ -514,9 +527,11 @@ export function generateCreateManyWithoutInputSchemas(
                 : `v.picklist(${modelField.type}Enum)`
               : getValibotType(modelField.type, modelField.isList);
 
+          // Fields with @updatedAt are managed by Prisma and should be optional
+          const hasAutoDefault = modelField.hasDefaultValue || modelField.isUpdatedAt;
           const wrappedType = wrapOptional(
             valibotType,
-            modelField.isRequired && !modelField.hasDefaultValue
+            modelField.isRequired && !hasAutoDefault
           );
           fields.push(`  ${modelField.name}: ${wrappedType},`);
         }
@@ -568,7 +583,7 @@ export function generateUncheckedCreateNestedManyWithoutInputSchemas(
         const reverseFieldCapitalized =
           reverseFieldName.charAt(0).toUpperCase() + reverseFieldName.slice(1);
 
-        output += `export const ${model.name}UncheckedCreateNestedManyWithout${reverseFieldCapitalized}InputSchema = v.lazy(() => v.object({
+        output += `export const ${model.name}UncheckedCreateNestedManyWithout${reverseFieldCapitalized}InputSchema: v.GenericSchema<Prisma.${model.name}UncheckedCreateNestedManyWithout${reverseFieldCapitalized}Input> = v.lazy(() => v.object({
   create: v.optional(v.union([v.array(${model.name}CreateWithout${reverseFieldCapitalized}InputSchema), v.array(${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema), ${model.name}CreateWithout${reverseFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema])),
   connectOrCreate: v.optional(v.union([v.array(${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema), ${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema])),
   createMany: v.optional(${model.name}CreateMany${reverseFieldCapitalized}InputEnvelopeSchema),
@@ -625,7 +640,9 @@ export function generateCreateManyInputSchema(model: DMMF.Model): string {
           : `v.picklist(${field.type}Enum)`
         : getValibotType(field.type, field.isList);
 
-    const wrappedType = wrapOptional(valibotType, field.isRequired && !field.hasDefaultValue);
+    // Fields with @updatedAt are managed by Prisma and should be optional
+    const hasAutoDefault = field.hasDefaultValue || field.isUpdatedAt;
+    const wrappedType = wrapOptional(valibotType, field.isRequired && !hasAutoDefault);
     fields.push(`  ${field.name}: ${wrappedType},`);
   }
 

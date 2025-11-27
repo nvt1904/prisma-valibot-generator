@@ -22,7 +22,7 @@ export function generateCountAggregateInputSchema(model: DMMF.Model): string {
 
   fields.push(`  _all: v.optional(v.literal(true)),`);
 
-  return `export const ${schemaName} = v.object({
+  return `export const ${schemaName}: v.GenericSchema<Prisma.${model.name}CountAggregateInputType> = v.object({
 ${fields.join('\n')}
 });
 
@@ -48,7 +48,7 @@ export function generateSumAggregateInputSchema(model: DMMF.Model): string {
 `;
   }
 
-  return `export const ${schemaName} = v.object({
+  return `export const ${schemaName}: v.GenericSchema<Prisma.${model.name}SumAggregateInputType> = v.object({
 ${fields.join('\n')}
 });
 
@@ -74,7 +74,7 @@ export function generateAvgAggregateInputSchema(model: DMMF.Model): string {
 `;
   }
 
-  return `export const ${schemaName} = v.object({
+  return `export const ${schemaName}: v.GenericSchema<Prisma.${model.name}AvgAggregateInputType> = v.object({
 ${fields.join('\n')}
 });
 
@@ -94,7 +94,7 @@ export function generateMinAggregateInputSchema(model: DMMF.Model): string {
     }
   }
 
-  return `export const ${schemaName} = v.object({
+  return `export const ${schemaName}: v.GenericSchema<Prisma.${model.name}MinAggregateInputType> = v.object({
 ${fields.join('\n')}
 });
 
@@ -114,7 +114,7 @@ export function generateMaxAggregateInputSchema(model: DMMF.Model): string {
     }
   }
 
-  return `export const ${schemaName} = v.object({
+  return `export const ${schemaName}: v.GenericSchema<Prisma.${model.name}MaxAggregateInputType> = v.object({
 ${fields.join('\n')}
 });
 

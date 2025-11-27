@@ -484,7 +484,7 @@ export function generateUpdateManyNestedWithoutInputSchemas(
         const reverseFieldCapitalized =
           reverseFieldName.charAt(0).toUpperCase() + reverseFieldName.slice(1);
 
-        output += `export const ${model.name}UpdateManyWithout${reverseFieldCapitalized}NestedInputSchema = v.lazy(() => v.object({
+        output += `export const ${model.name}UpdateManyWithout${reverseFieldCapitalized}NestedInputSchema: v.GenericSchema<Prisma.${model.name}UpdateManyWithout${reverseFieldCapitalized}NestedInput> = v.lazy(() => v.object({
   create: v.optional(v.union([v.array(${model.name}CreateWithout${reverseFieldCapitalized}InputSchema), v.array(${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema), ${model.name}CreateWithout${reverseFieldCapitalized}InputSchema, ${model.name}UncheckedCreateWithout${reverseFieldCapitalized}InputSchema])),
   connectOrCreate: v.optional(v.union([v.array(${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema), ${model.name}CreateOrConnectWithout${reverseFieldCapitalized}InputSchema])),
   upsert: v.optional(v.union([v.array(${model.name}UpsertWithWhereUniqueWithout${reverseFieldCapitalized}InputSchema), ${model.name}UpsertWithWhereUniqueWithout${reverseFieldCapitalized}InputSchema])),

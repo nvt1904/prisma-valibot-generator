@@ -80,11 +80,21 @@ model Profile {
   userId String  @unique
 }
 
+// File model for testing nested relations
+model File {
+  id      String   @id @default(cuid())
+  url     String
+  authors Author[]
+}
+
 // 1:N Relation (Author <-> Post)
 model Author {
-  id    String @id @default(cuid())
-  name  String
-  posts Post[]
+  id        String    @id @default(cuid())
+  name      String
+  avatarId  String?
+  avatar    File?     @relation(fields: [avatarId], references: [id])
+  posts     Post[]
+  articles  Article[] @relation("ArticleAuthor")
 }
 
 model Post {
@@ -92,6 +102,16 @@ model Post {
   title    String
   author   Author @relation(fields: [authorId], references: [id])
   authorId String
+}
+
+// Article with optional author (like your ProductSEO case)
+model Article {
+  id        String   @id @default(cuid())
+  title     String
+  author    Author?  @relation("ArticleAuthor", fields: [authorId], references: [id])
+  authorId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // M:N Relation (Implicit) (Category <-> Product)
