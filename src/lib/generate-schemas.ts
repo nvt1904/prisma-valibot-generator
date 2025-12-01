@@ -19,7 +19,13 @@ import {
   generateMinOrderByAggregateInputSchema,
   generateMaxOrderByAggregateInputSchema,
 } from '../builders/orderby-input';
-import { generateSelectSchema, generateIncludeSchema } from '../builders/select-include';
+import {
+  generateSelectSchema,
+  generateIncludeSchema,
+  generateCountOutputTypeSelectSchema,
+  generateCountOutputTypeDefaultArgsSchema,
+  generateCountOutputTypeCountArgsSchemas,
+} from '../builders/select-include';
 import {
   generateFindManyArgsSchema,
   generateFindFirstArgsSchema,
@@ -166,6 +172,22 @@ import { Prisma } from '@prisma/client';
     if (modelsUsedAsListRelations.has(model.name)) {
       indexContent += generateOrderByRelationAggregateSchema(model);
     }
+
+    // Generate CountOutputType schemas before Select/Include (as they're referenced)
+    const countArgsSchemas = generateCountOutputTypeCountArgsSchemas(model);
+    if (countArgsSchemas.length > 0) {
+      indexContent += `\n// ${model.name} CountOutputType\n`;
+      indexContent += countArgsSchemas.join('\n');
+      const countSelectSchema = generateCountOutputTypeSelectSchema(model);
+      if (countSelectSchema) {
+        indexContent += countSelectSchema;
+      }
+      const countDefaultArgsSchema = generateCountOutputTypeDefaultArgsSchema(model);
+      if (countDefaultArgsSchema) {
+        indexContent += countDefaultArgsSchema;
+      }
+    }
+
     indexContent += generateSelectSchema(model);
     indexContent += generateIncludeSchema(model);
   }

@@ -18,6 +18,15 @@ The output mirrors Prisma's DMMF, providing fully type-safe validation for all P
 - [Generated Schemas](#generated-schemas)
 - [Type Mappings](#type-mappings)
 - [Type Safety Features](#type-safety-features)
+  - [DateTime Flexibility](#datetime-flexibility)
+  - [Nullable Fields](#nullable-fields)
+  - [WhereInput Unions](#whereinput-unions)
+  - [Relation Filters (XOR Pattern)](#relation-filters-xor-pattern)
+  - [Logical Operators (AND/OR/NOT)](#logical-operators-andornot)
+  - [ScalarFieldEnum Pattern](#scalarfieldenum-pattern)
+  - [Required Relations](#required-relations)
+  - [Relation Counting with _count](#relation-counting-with-_count)
+  - [Optimized Schema Structure](#optimized-schema-structure)
 - [Advanced Usage Patterns](#advanced-usage-patterns)
 - [Contributing / Scripts](#contributing--scripts)
 - [License](#license)
@@ -31,6 +40,7 @@ Generates comprehensive validation schemas for all Prisma operations:
 - **Input Schemas**: `CreateInput`, `UpdateInput`, `WhereInput`, `WhereUniqueInput`, `OrderByInput`
 - **Relation Helpers**: Nested create, connect, update, upsert, disconnect, and delete operations
 - **Aggregate Inputs**: Count, sum, avg, min, max for numeric fields
+- **Relation Counting**: `_count` field in `select` and `include` for counting related records
 
 ### 🧠 Smart Type Alignment
 Perfect parity with Prisma's type system:
@@ -174,6 +184,11 @@ pnpm add -D @nvt1904/prisma-valibot-generator
       include: {
         profile: true,
         posts: { where: { published: true } },
+        _count: {                        // Count relations
+          select: {
+            posts: true,                 // Count all posts
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: 10,
@@ -230,8 +245,10 @@ For each model in your `schema.prisma` (e.g., `User`), the following schemas are
 | `UserUncheckedUpdateInputSchema` | Unchecked input for `update` operations |
 | `UserWhereInputSchema` | Filters for `where` clauses (supports recursion) |
 | `UserWhereUniqueInputSchema` | Unique identifiers for `where` clauses |
-| `UserSelectSchema` | Schema for `select` arguments |
-| `UserIncludeSchema` | Schema for `include` arguments |
+| `UserSelectSchema` | Schema for `select` arguments (includes `_count` for models with list relations) |
+| `UserIncludeSchema` | Schema for `include` arguments (includes `_count` for models with list relations) |
+| `UserCountOutputTypeSelectSchema` | Schema for selecting specific relation counts (only for models with list relations) |
+| `UserCountOutputTypeDefaultArgsSchema` | Schema for `_count` field arguments (only for models with list relations) |
 | `UserFindManyArgsSchema` | Arguments for `findMany` |
 | `UserFindFirstArgsSchema` | Arguments for `findFirst` |
 | `UserFindUniqueArgsSchema` | Arguments for `findUnique` |
@@ -421,6 +438,57 @@ await prisma.account.create({
   }
 });
 ```
+
+### Relation Counting with _count
+
+Models with list relations automatically include a `_count` field in their `Select` and `Include` schemas, allowing you to count related records efficiently:
+
+```ts
+// Count all related records
+const users = await prisma.user.findMany({
+  select: {
+    id: true,
+    name: true,
+    _count: true,  // Returns count of all list relations (posts, comments, etc.)
+  }
+});
+// Result: [{ id: '1', name: 'John', _count: { posts: 5, comments: 12 } }]
+
+// Count specific relations
+const users = await prisma.user.findMany({
+  select: {
+    id: true,
+    _count: {
+      select: {
+        posts: true,  // Only count posts
+      }
+    }
+  }
+});
+// Result: [{ id: '1', _count: { posts: 5 } }]
+
+// Count with filters
+const users = await prisma.user.findMany({
+  include: {
+    posts: true,
+    _count: {
+      select: {
+        posts: { where: { published: true } },  // Count only published posts
+      }
+    }
+  }
+});
+// Result: [{ id: '1', posts: [...], _count: { posts: 3 } }]
+```
+
+**Implementation Details**:
+- Only models with **list relations** (one-to-many or many-to-many) get the `_count` field
+- Models with only singular relations (one-to-one) do not have `_count`
+- Each relation can be counted with optional `where` filters
+- Generated schemas include:
+  - `ModelCountOutputTypeSelectSchema` - Select which relations to count
+  - `ModelCountOutputTypeDefaultArgsSchema` - Arguments for the `_count` field
+  - `ModelCountOutputTypeCount[Relation]ArgsSchema` - Filter arguments for each relation count
 
 ### Optimized Schema Structure
 
